@@ -1,0 +1,47 @@
+name: Template-Action
+description: A template action for GitHub Actions using PowerShell
+author: PSModule
+branding:
+  icon: upload-cloud
+  color: white
+
+inputs:
+  Subject:
+    description: The subject to greet
+    required: false
+    default: World
+  Debug:
+    description: Enable debug output.
+    required: false
+    default: 'false'
+  Verbose:
+    description: Enable verbose output.
+    required: false
+    default: 'false'
+  Version:
+    description: Specifies the version of the GitHub module to be installed. The value must be an exact version.
+    required: false
+  Prerelease:
+    description: Allow prerelease versions if available.
+    required: false
+    default: 'false'
+  WorkingDirectory:
+    description: The working directory where the script will run from.
+    required: false
+    default: ${{ github.workspace }}
+
+runs:
+  using: composite
+  steps:
+    - name: Template-Action
+      uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
+      env:
+        PSMOUDLE_TEMPLATE_ACTION_INPUT_Subject: ${{ inputs.Subject }}
+      with:
+        Name: Template-Action
+        Debug: ${{ inputs.Debug }}
+        Prerelease: ${{ inputs.Prerelease }}
+        Verbose: ${{ inputs.Verbose }}
+        Version: ${{ inputs.Version }}
+        WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        Script: ${{ github.action_path }}/scripts/main.ps1
