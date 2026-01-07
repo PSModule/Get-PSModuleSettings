@@ -230,8 +230,24 @@ process {
                     }
                     Write-Host "Tests found at [$testsPath]"
 
+
+                    <#
+                    .SYNOPSIS
+                        Retrieves test items from a specified folder.
+
+                    .DESCRIPTION
+                        Searches for test configuration, container, or test script files within the specified folder.
+
+                    .OUTPUTS
+                        System.IO.FileInfo[]
+                        Returns an array of FileInfo objects representing the test items found.
+                    #>
                     function Get-TestItemsFromFolder {
-                        param ([string]$FolderPath)
+                        [CmdletBinding()]
+                        param (
+                            # The path to the folder containing test items.
+                            [string]$FolderPath
+                        )
 
                         $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
                         if ($configFiles.Count -eq 1) {
