@@ -243,7 +243,7 @@ process {
                             System.IO.FileInfo[]
                             Returns an array of FileInfo objects representing the test items found.
                         #>
-                        [OutputType([System.IO.FileInfo[]])]
+                        [OutputType([System.IO.FileInfo[]], [System.Object[]])]
                         [CmdletBinding()]
                         param (
                             # The path to the folder containing test items.
