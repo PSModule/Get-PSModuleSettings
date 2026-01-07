@@ -28,6 +28,51 @@ jobs:
           persist-credentials: false
 
       - name: Action-Test
+        id: get-settings
         uses: ./
         with:
-          Subject: PSModule
+          SettingsPath: './tests/PSModule.yml'
+
+      - name: Validate Settings Output
+        shell: pwsh
+        run: |
+          $settings = '${{ steps.get-settings.outputs.Settings }}' | ConvertFrom-Json
+          if (-not $settings) {
+            Write-Error "Settings output is empty"
+            exit 1
+          }
+          Write-Host "✓ Settings retrieved successfully"
+          Write-Host "Settings: $($settings | ConvertTo-Json -Depth 2)"
+
+      - name: Validate SourceCodeTestSuites Output
+        shell: pwsh
+        run: |
+          $suites = '${{ steps.get-settings.outputs.SourceCodeTestSuites }}'
+          if ([string]::IsNullOrEmpty($suites)) {
+            Write-Host "⚠ SourceCodeTestSuites is empty (this may be expected)"
+          } else {
+            $suitesObj = $suites | ConvertFrom-Json
+            Write-Host "✓ SourceCodeTestSuites: $($suitesObj.Count) suite(s) found"
+          }
+
+      - name: Validate PSModuleTestSuites Output
+        shell: pwsh
+        run: |
+          $suites = '${{ steps.get-settings.outputs.PSModuleTestSuites }}'
+          if ([string]::IsNullOrEmpty($suites)) {
+            Write-Host "⚠ PSModuleTestSuites is empty (this may be expected)"
+          } else {
+            $suitesObj = $suites | ConvertFrom-Json
+            Write-Host "✓ PSModuleTestSuites: $($suitesObj.Count) suite(s) found"
+          }
+
+      - name: Validate ModuleTestSuites Output
+        shell: pwsh
+        run: |
+          $suites = '${{ steps.get-settings.outputs.ModuleTestSuites }}'
+          if ([string]::IsNullOrEmpty($suites)) {
+            Write-Host "⚠ ModuleTestSuites is empty (this may be expected)"
+          } else {
+            $suitesObj = $suites | ConvertFrom-Json
+            Write-Host "✓ ModuleTestSuites: $($suitesObj.Count) suite(s) found"
+          }
