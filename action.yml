@@ -1,15 +1,14 @@
-name: Template-Action
-description: A template action for GitHub Actions using PowerShell
+name: Get-PSModuleSettings
+description: Get settings for a PowerShell module workflow
 author: PSModule
 branding:
-  icon: upload-cloud
-  color: white
+  icon: settings
+  color: blue
 
 inputs:
-  Subject:
-    description: The subject to greet
+  SettingsPath:
+    description: Path to the settings file (json, yaml/yml, or psd1)
     required: false
-    default: World
   Debug:
     description: Enable debug output.
     required: false
@@ -30,15 +29,28 @@ inputs:
     required: false
     default: ${{ github.workspace }}
 
+outputs:
+  Settings:
+    description: The complete settings object as JSON, including test suites
+    value: ${{ fromJson(steps.Get-PSModuleSettings.outputs.result).Settings }}
+
 runs:
   using: composite
   steps:
-    - name: Template-Action
+    - name: Get-PSModuleSettings
       uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
+      id: Get-PSModuleSettings
       env:
-        PSMOUDLE_TEMPLATE_ACTION_INPUT_Subject: ${{ inputs.Subject }}
+        PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
+        PSMODULE_GET_SETTINGS_INPUT_Debug: ${{ inputs.Debug }}
+        PSMODULE_GET_SETTINGS_INPUT_Verbose: ${{ inputs.Verbose }}
+        PSMODULE_GET_SETTINGS_INPUT_Version: ${{ inputs.Version }}
+        PSMODULE_GET_SETTINGS_INPUT_Prerelease: ${{ inputs.Prerelease }}
+        PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory: ${{ inputs.WorkingDirectory }}
       with:
-        Name: Template-Action
+        Name: Get-PSModuleSettings
+        ShowInfo: false
+        ShowOutput: true
         Debug: ${{ inputs.Debug }}
         Prerelease: ${{ inputs.Prerelease }}
         Verbose: ${{ inputs.Verbose }}
