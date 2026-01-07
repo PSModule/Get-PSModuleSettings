@@ -249,21 +249,36 @@ process {
                         return $testFiles
                     }
 
-                    function Find-TestDirectories {
-                        param ([string]$Path)
+                    <#
+                    .SYNOPSIS
+                        Recursively finds all test directories.
+
+                    .DESCRIPTION
+                        Recursively searches for all subdirectories within the specified path.
+
+                    .OUTPUTS
+                        System.String[]
+                        Returns an array of directory paths.
+                    #>
+                    function Find-TestDirectory {
+                        [CmdletBinding()]
+                        param(
+                            #The root path to search for test directories.
+                            [string]$Path
+                        )
 
                         $directories = @()
                         $childDirs = Get-ChildItem -Path $Path -Directory
 
                         foreach ($dir in $childDirs) {
                             $directories += $dir.FullName
-                            $directories += Find-TestDirectories -Path $dir.FullName
+                            $directories += Find-TestDirectory -Path $dir.FullName
                         }
 
                         return $directories
                     }
 
-                    $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
+                    $allTestFolders = @($testsPath) + (Find-TestDirectory -Path $testsPath)
 
                     foreach ($folder in $allTestFolders) {
                         $testItems = Get-TestItemsFromFolder -FolderPath $folder

@@ -51,9 +51,30 @@ Write-Host "`nComparing with reference settings..."
 $referencePath = Join-Path $PSScriptRoot 'Settings.json'
 $expectedSettings = Get-Content $referencePath -Raw | ConvertFrom-Json
 
-# Function to compare object structures
+<#
+.SYNOPSIS
+    Compares the structure of two objects.
+
+.DESCRIPTION
+    Recursively compares the structure of an actual object against an expected object,
+    validating that all expected properties exist in the actual object.
+
+.OUTPUTS
+    System.String[]
+    Returns an array of error messages for any structural mismatches.
+#>
 function Test-ObjectStructure {
-    param($Actual, $Expected, $Path = 'Root')
+    [CmdletBinding()]
+    param(
+        # The actual object to validate.
+        $Actual,
+
+        # The expected object structure to validate against.
+        $Expected,
+
+        # The current path in the object hierarchy (used for error reporting).
+        $Path = 'Root'
+    )
 
     $errors = @()
 
