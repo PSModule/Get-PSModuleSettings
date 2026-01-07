@@ -243,6 +243,7 @@ process {
                             System.IO.FileInfo[]
                             Returns an array of FileInfo objects representing the test items found.
                         #>
+                        [OutputType([System.IO.FileInfo[]])]
                         [CmdletBinding()]
                         param (
                             # The path to the folder containing test items.
@@ -277,6 +278,7 @@ process {
                             System.String[]
                             Returns an array of directory paths.
                         #>
+                        [OutputType([System.String[]])]
                         [CmdletBinding()]
                         param(
                             #The root path to search for test directories.
