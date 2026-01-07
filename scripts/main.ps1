@@ -220,8 +220,9 @@ process {
             }
 
             LogGroup 'Module Local Test Suites:' {
-                $moduleTestSuites = if ($settings.Test.Module.Skip) {
+                if ($settings.Test.Module.Skip) {
                     Write-Host 'Skipping all module tests.'
+                    $moduleTestSuites = @()
                 } else {
                     # Locate the tests directory.
                     $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
@@ -295,32 +296,33 @@ process {
 
                     $allTestFolders = @($testsPath) + (Find-TestDirectory -Path $testsPath)
 
+                    $moduleTestSuites = [System.Collections.ArrayList]::new()
                     foreach ($folder in $allTestFolders) {
                         $testItems = Get-TestItemsFromFolder -FolderPath $folder
                         foreach ($item in $testItems) {
                             if (-not $settings.Test.Linux.Skip -and -not $settings.Test.Module.Linux.Skip) {
-                                [pscustomobject]@{
-                                    RunsOn   = $linux.RunsOn
-                                    OSName   = $linux.OSName
-                                    TestPath = Resolve-Path -Path $item.FullName -Relative
-                                    TestName = ($item.BaseName).Split('.')[0]
-                                }
+                                [void]$moduleTestSuites.Add([pscustomobject]@{
+                                        RunsOn   = $linux.RunsOn
+                                        OSName   = $linux.OSName
+                                        TestPath = Resolve-Path -Path $item.FullName -Relative
+                                        TestName = ($item.BaseName).Split('.')[0]
+                                    })
                             }
                             if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.Module.MacOS.Skip) {
-                                [pscustomobject]@{
-                                    RunsOn   = $macOS.RunsOn
-                                    OSName   = $macOS.OSName
-                                    TestPath = Resolve-Path -Path $item.FullName -Relative
-                                    TestName = ($item.BaseName).Split('.')[0]
-                                }
+                                [void]$moduleTestSuites.Add([pscustomobject]@{
+                                        RunsOn   = $macOS.RunsOn
+                                        OSName   = $macOS.OSName
+                                        TestPath = Resolve-Path -Path $item.FullName -Relative
+                                        TestName = ($item.BaseName).Split('.')[0]
+                                    })
                             }
                             if (-not $settings.Test.Windows.Skip -and -not $settings.Test.Module.Windows.Skip) {
-                                [pscustomobject]@{
-                                    RunsOn   = $windows.RunsOn
-                                    OSName   = $windows.OSName
-                                    TestPath = Resolve-Path -Path $item.FullName -Relative
-                                    TestName = ($item.BaseName).Split('.')[0]
-                                }
+                                [void]$moduleTestSuites.Add([pscustomobject]@{
+                                        RunsOn   = $windows.RunsOn
+                                        OSName   = $windows.OSName
+                                        TestPath = Resolve-Path -Path $item.FullName -Relative
+                                        TestName = ($item.BaseName).Split('.')[0]
+                                    })
                             }
                         }
                     }
