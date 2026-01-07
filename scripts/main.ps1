@@ -341,21 +341,8 @@ process {
                     PublishSite          = $isMergedPR
                 })
 
-            Write-Host 'Job Run Conditions:'
-            Write-Host "  LintRepository: $($settings.Run.LintRepository)"
-            Write-Host "  BuildModule: $($settings.Run.BuildModule)"
-            Write-Host "  TestSourceCode: $($settings.Run.TestSourceCode)"
-            Write-Host "  LintSourceCode: $($settings.Run.LintSourceCode)"
-            Write-Host "  TestModule: $($settings.Run.TestModule)"
-            Write-Host "  BeforeAllModuleLocal: $($settings.Run.BeforeAllModuleLocal)"
-            Write-Host "  TestModuleLocal: $($settings.Run.TestModuleLocal)"
-            Write-Host "  AfterAllModuleLocal: $($settings.Run.AfterAllModuleLocal)"
-            Write-Host "  GetTestResults: $($settings.Run.GetTestResults)"
-            Write-Host "  GetCodeCoverage: $($settings.Run.GetCodeCoverage)"
-            Write-Host "  PublishModule: $($settings.Run.PublishModule)"
-            Write-Host "  BuildDocs: $($settings.Run.BuildDocs)"
-            Write-Host "  BuildSite: $($settings.Run.BuildSite)"
-            Write-Host "  PublishSite: $($settings.Run.PublishSite)"
+            Write-Host 'Run conditions:'
+            $settings.Run | Format-List | Out-String
         }
 
         LogGroup 'Final settings' {
