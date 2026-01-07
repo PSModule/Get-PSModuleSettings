@@ -230,17 +230,16 @@ process {
                     }
                     Write-Host "Tests found at [$testsPath]"
 
-
                     <#
-                    .SYNOPSIS
-                        Retrieves test items from a specified folder.
+                        .SYNOPSIS
+                            Retrieves test items from a specified folder.
 
-                    .DESCRIPTION
-                        Searches for test configuration, container, or test script files within the specified folder.
+                        .DESCRIPTION
+                            Searches for test configuration, container, or test script files within the specified folder.
 
-                    .OUTPUTS
-                        System.IO.FileInfo[]
-                        Returns an array of FileInfo objects representing the test items found.
+                        .OUTPUTS
+                            System.IO.FileInfo[]
+                            Returns an array of FileInfo objects representing the test items found.
                     #>
                     function Get-TestItemsFromFolder {
                         [CmdletBinding()]
