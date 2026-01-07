@@ -231,18 +231,18 @@ process {
                     }
                     Write-Host "Tests found at [$testsPath]"
 
-                    <#
-                        .SYNOPSIS
+                    function Get-TestItemsFromFolder {
+                        <#
+                            .SYNOPSIS
                             Retrieves test items from a specified folder.
 
-                        .DESCRIPTION
+                            .DESCRIPTION
                             Searches for test configuration, container, or test script files within the specified folder.
 
-                        .OUTPUTS
+                            .OUTPUTS
                             System.IO.FileInfo[]
                             Returns an array of FileInfo objects representing the test items found.
-                    #>
-                    function Get-TestItemsFromFolder {
+                        #>
                         [CmdletBinding()]
                         param (
                             # The path to the folder containing test items.
@@ -265,18 +265,18 @@ process {
                         return $testFiles
                     }
 
-                    <#
-                    .SYNOPSIS
-                        Recursively finds all test directories.
-
-                    .DESCRIPTION
-                        Recursively searches for all subdirectories within the specified path.
-
-                    .OUTPUTS
-                        System.String[]
-                        Returns an array of directory paths.
-                    #>
                     function Find-TestDirectory {
+                        <#
+                            .SYNOPSIS
+                            Recursively finds all test directories.
+
+                            .DESCRIPTION
+                            Recursively searches for all subdirectories within the specified path.
+
+                            .OUTPUTS
+                            System.String[]
+                            Returns an array of directory paths.
+                        #>
                         [CmdletBinding()]
                         param(
                             #The root path to search for test directories.
