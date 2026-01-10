@@ -1,4 +1,4 @@
-﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository -Reinstall
+﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
 
 $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
 $debug = $env:PSMODULE_GET_SETTINGS_INPUT_Debug
@@ -168,11 +168,13 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isMergedPR = $isPR -and $env:GITHUB_EVENT_PULL_REQUEST_MERGED -eq 'true'
     $isNotAbandonedPR = -not $isAbandonedPR
 
-    Write-Host "isPR: $isPR"
-    Write-Host "isOpenOrUpdatedPR: $isOpenOrUpdatedPR"
-    Write-Host "isAbandonedPR: $isAbandonedPR"
-    Write-Host "isMergedPR: $isMergedPR"
-    Write-Host "isNotAbandonedPR: $isNotAbandonedPR"
+    [pscustomobject]@{
+        isPR              = $isPR
+        isOpenOrUpdatedPR = $isOpenOrUpdatedPR
+        isAbandonedPR     = $isAbandonedPR
+        isMergedPR        = $isMergedPR
+        isNotAbandonedPR  = $isNotAbandonedPR
+    } | Format-List | Out-String
 }
 
 # Get-TestSuites
