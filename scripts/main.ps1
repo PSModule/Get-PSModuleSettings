@@ -178,12 +178,16 @@ LogGroup 'Calculate Job Run Conditions:' {
 # Get-TestSuites
 if ($settings.Test.Skip) {
     Write-Host 'Skipping all tests.'
-    Set-GitHubOutput -Name SourceCodeTestSuites -Value '[]'
-    Set-GitHubOutput -Name PSModuleTestSuites -Value '[]'
-    Set-GitHubOutput -Name ModuleTestSuites -Value '[]'
-    $sourceCodeTestSuites = '[]'
-    $psModuleTestSuites = '[]'
-    $moduleTestSuites = '[]'
+    $sourceCodeTestSuites = $null
+    $psModuleTestSuites = $null
+    $moduleTestSuites = $null
+
+    # Add TestSuites to settings
+    $settings | Add-Member -MemberType NoteProperty -Name TestSuites -Value ([pscustomobject]@{
+            SourceCode = $null
+            PSModule   = $null
+            Module     = $null
+        })
 } else {
 
     # Define test configurations as an array of hashtables.
@@ -194,27 +198,29 @@ if ($settings.Test.Skip) {
     LogGroup 'Source Code Test Suites:' {
         $sourceCodeTestSuites = if ($settings.Test.SourceCode.Skip) {
             Write-Host 'Skipping all source code tests.'
+            $null
         } else {
-            if (-not $settings.Test.Linux.Skip -and -not $settings.Test.SourceCode.Linux.Skip) { $linux }
-            if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.SourceCode.MacOS.Skip) { $macOS }
-            if (-not $settings.Test.Windows.Skip -and -not $settings.Test.SourceCode.Windows.Skip) { $windows }
+            $result = @()
+            if (-not $settings.Test.Linux.Skip -and -not $settings.Test.SourceCode.Linux.Skip) { $result += $linux }
+            if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.SourceCode.MacOS.Skip) { $result += $macOS }
+            if (-not $settings.Test.Windows.Skip -and -not $settings.Test.SourceCode.Windows.Skip) { $result += $windows }
+            if ($result.Count -gt 0) { $result } else { $null }
         }
         $sourceCodeTestSuites | Format-Table -AutoSize | Out-String
-        $sourceCodeTestSuites = ($null -ne $sourceCodeTestSuites) ? ($sourceCodeTestSuites | ConvertTo-Json -AsArray) : '[]'
-        Set-GitHubOutput -Name SourceCodeTestSuites -Value $sourceCodeTestSuites
     }
 
     LogGroup 'PSModule Test Suites:' {
         $psModuleTestSuites = if ($settings.Test.PSModule.Skip) {
             Write-Host 'Skipping all PSModule tests.'
+            $null
         } else {
-            if (-not $settings.Test.Linux.Skip -and -not $settings.Test.PSModule.Linux.Skip) { $linux }
-            if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.PSModule.MacOS.Skip) { $macOS }
-            if (-not $settings.Test.Windows.Skip -and -not $settings.Test.PSModule.Windows.Skip) { $windows }
+            $result = @()
+            if (-not $settings.Test.Linux.Skip -and -not $settings.Test.PSModule.Linux.Skip) { $result += $linux }
+            if (-not $settings.Test.MacOS.Skip -and -not $settings.Test.PSModule.MacOS.Skip) { $result += $macOS }
+            if (-not $settings.Test.Windows.Skip -and -not $settings.Test.PSModule.Windows.Skip) { $result += $windows }
+            if ($result.Count -gt 0) { $result } else { $null }
         }
         $psModuleTestSuites | Format-Table -AutoSize | Out-String
-        $psModuleTestSuites = ($null -ne $psModuleTestSuites) ? ($psModuleTestSuites | ConvertTo-Json -AsArray) : '[]'
-        Set-GitHubOutput -Name PSModuleTestSuites -Value $psModuleTestSuites
     }
 
     LogGroup 'Module Local Test Suites:' {
@@ -294,9 +300,14 @@ if ($settings.Test.Skip) {
             }
         }
         $moduleTestSuites | Format-Table -AutoSize | Out-String
-        $moduleTestSuites = ($null -ne $moduleTestSuites) ? ($moduleTestSuites | ConvertTo-Json -AsArray) : '[]'
-        Set-GitHubOutput -Name ModuleTestSuites -Value $moduleTestSuites
     }
+
+    # Add TestSuites to settings
+    $settings | Add-Member -MemberType NoteProperty -Name TestSuites -Value ([pscustomobject]@{
+            SourceCode = $sourceCodeTestSuites
+            PSModule   = $psModuleTestSuites
+            Module     = $moduleTestSuites
+        })
 }
 
 # Calculate job-specific conditions and add to settings
@@ -305,17 +316,17 @@ LogGroup 'Calculate Job Run Conditions:' {
     $settings | Add-Member -MemberType NoteProperty -Name Run -Value ([pscustomobject]@{
             LintRepository       = $isOpenOrUpdatedPR -and (-not $settings.Linter.Skip)
             BuildModule          = $isNotAbandonedPR -and (-not $settings.Build.Module.Skip)
-            TestSourceCode       = $isNotAbandonedPR -and ($sourceCodeTestSuites -ne '[]')
-            LintSourceCode       = $isNotAbandonedPR -and ($sourceCodeTestSuites -ne '[]')
-            TestModule           = $isNotAbandonedPR -and ($psModuleTestSuites -ne '[]')
-            BeforeAllModuleLocal = $isNotAbandonedPR -and ($moduleTestSuites -ne '[]')
-            TestModuleLocal      = $isNotAbandonedPR -and ($moduleTestSuites -ne '[]')
+            TestSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
+            LintSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
+            TestModule           = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.PSModule)
+            BeforeAllModuleLocal = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
+            TestModuleLocal      = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
             AfterAllModuleLocal  = $true # Always runs if Test-ModuleLocal was not skipped
             GetTestResults       = $isNotAbandonedPR -and (-not $settings.Test.TestResults.Skip) -and (
-                $sourceCodeTestSuites -ne '[]' -or $psModuleTestSuites -ne '[]' -or $moduleTestSuites -ne '[]'
+                ($null -ne $settings.TestSuites.SourceCode) -or ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
             )
             GetCodeCoverage      = $isNotAbandonedPR -and (-not $settings.Test.CodeCoverage.Skip) -and (
-                $psModuleTestSuites -ne '[]' -or $moduleTestSuites -ne '[]'
+                ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
             )
             PublishModule        = $isPR -and (
                 $isAbandonedPR -or
