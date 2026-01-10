@@ -372,47 +372,30 @@ if ($settings.Test.Skip) {
 # Calculate job-specific conditions and add to settings
 LogGroup 'Calculate Job Run Conditions:' {
     # Create Run object with all job-specific conditions
-    $settings | Add-Member -MemberType NoteProperty -Name Run -Value ([pscustomobject]@{
-            LintRepository       = $isOpenOrUpdatedPR -and (-not $settings.Linter.Skip)
-            BuildModule          = $isNotAbandonedPR -and (-not $settings.Build.Module.Skip)
-            TestSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
-            LintSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
-            TestModule           = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.PSModule)
-            BeforeAllModuleLocal = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
-            TestModuleLocal      = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
-            AfterAllModuleLocal  = $true # Always runs if Test-ModuleLocal was not skipped
-            GetTestResults       = $isNotAbandonedPR -and (-not $settings.Test.TestResults.Skip) -and (
-                ($null -ne $settings.TestSuites.SourceCode) -or ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
-            )
-            GetCodeCoverage      = $isNotAbandonedPR -and (-not $settings.Test.CodeCoverage.Skip) -and (
-                ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
-            )
-            PublishModule        = $isPR -and (
-                $isAbandonedPR -or
-                ($isOpenOrUpdatedPR -or $isMergedPR)
-            )
-            BuildDocs            = $isNotAbandonedPR -and (-not $settings.Build.Docs.Skip)
-            BuildSite            = $isNotAbandonedPR -and (-not $settings.Build.Site.Skip)
-            PublishSite          = $isMergedPR
-        })
+    $run = [pscustomobject]@{
+        LintRepository       = $isOpenOrUpdatedPR -and (-not $settings.Linter.Skip)
+        BuildModule          = $isNotAbandonedPR -and (-not $settings.Build.Module.Skip)
+        TestSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
+        LintSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
+        TestModule           = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.PSModule)
+        BeforeAllModuleLocal = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
+        TestModuleLocal      = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
+        AfterAllModuleLocal  = $true # Always runs if Test-ModuleLocal was not skipped
+        GetTestResults       = $isNotAbandonedPR -and (-not $settings.Test.TestResults.Skip) -and (
+            ($null -ne $settings.TestSuites.SourceCode) -or ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
+        )
+        GetCodeCoverage      = $isNotAbandonedPR -and (-not $settings.Test.CodeCoverage.Skip) -and (
+            ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
+        )
+        PublishModule        = $isPR -and ($isAbandonedPR -or ($isOpenOrUpdatedPR -or $isMergedPR))
+        BuildDocs            = $isNotAbandonedPR -and (-not $settings.Build.Docs.Skip)
+        BuildSite            = $isNotAbandonedPR -and (-not $settings.Build.Site.Skip)
+        PublishSite          = $isMergedPR
+    }
+    $settings | Add-Member -MemberType NoteProperty -Name Run -Value $run
 
     Write-Host 'Job Run Conditions:'
-    [pscustomobject]@{
-        LintRepository       = $settings.Run.LintRepository
-        BuildModule          = $settings.Run.BuildModule
-        TestSourceCode       = $settings.Run.TestSourceCode
-        LintSourceCode       = $settings.Run.LintSourceCode
-        TestModule           = $settings.Run.TestModule
-        BeforeAllModuleLocal = $settings.Run.BeforeAllModuleLocal
-        TestModuleLocal      = $settings.Run.TestModuleLocal
-        AfterAllModuleLocal  = $settings.Run.AfterAllModuleLocal
-        GetTestResults       = $settings.Run.GetTestResults
-        GetCodeCoverage      = $settings.Run.GetCodeCoverage
-        PublishModule        = $settings.Run.PublishModule
-        BuildDocs            = $settings.Run.BuildDocs
-        BuildSite            = $settings.Run.BuildSite
-        PublishSite          = $settings.Run.PublishSite
-    } | Format-List | Out-String
+    $run | Format-List | Out-String
 }
 
 LogGroup 'Final settings' {
