@@ -1,23 +1,4 @@
-﻿#Requires -Version 7.0
-
-<#
-.SYNOPSIS
-    Validates the settings output from Get-PSModuleSettings action.
-
-.DESCRIPTION
-    This script validates that the settings JSON output:
-    1. Is not empty
-    2. Conforms to the JSON schema (Settings.schema.json)
-    3. Has the expected structure matching the reference (Settings.json)
-
-    The settings JSON is expected to be provided via the SETTINGS_JSON environment variable.
-
-.EXAMPLE
-    $env:SETTINGS_JSON = $settingsJson
-    .\Validate-Settings.ps1
-#>
-
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 # Check if settings JSON is provided via environment variable
@@ -51,19 +32,19 @@ Write-Host "Comparing with reference settings..."
 $referencePath = Join-Path $PSScriptRoot 'Settings.json'
 $expectedSettings = Get-Content $referencePath -Raw | ConvertFrom-Json
 
-<#
-.SYNOPSIS
-    Compares the structure of two objects.
-
-.DESCRIPTION
-    Recursively compares the structure of an actual object against an expected object,
-    validating that all expected properties exist in the actual object.
-
-.OUTPUTS
-    System.String[]
-    Returns an array of error messages for any structural mismatches.
-#>
 function Test-ObjectStructure {
+    <#
+    .SYNOPSIS
+        Compares the structure of two objects.
+
+    .DESCRIPTION
+        Recursively compares the structure of an actual object against an expected object,
+        validating that all expected properties exist in the actual object.
+
+    .OUTPUTS
+        System.String[]
+        Returns an array of error messages for any structural mismatches.
+    #>
     [CmdletBinding()]
     param(
         # The actual object to validate.
