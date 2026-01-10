@@ -36,7 +36,7 @@ Write-Host '=============================================='
 
 # Validate against JSON schema
 Write-Host "`nValidating settings against JSON schema..."
-$schemaPath = Join-Path $PSScriptRoot 'Settings.schema.json'
+$schemaPath = Join-Path $PSScriptRoot '..' 'scripts' 'Settings.schema.json'
 $schema = Get-Content $schemaPath -Raw
 $isValid = Test-Json -Json $SettingsJson -Schema $schema
 

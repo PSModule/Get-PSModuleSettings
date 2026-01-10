@@ -38,6 +38,33 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
             }
         }
     }
+
+    LogGroup 'Validate settings against schema' {
+        $schemaPath = Join-Path $PSScriptRoot 'Settings.schema.json'
+        if (Test-Path -Path $schemaPath) {
+            Write-Host 'Validating settings against schema...'
+            $schema = Get-Content $schemaPath -Raw
+
+            # Convert settings to JSON for validation
+            $settingsJson = $settings | ConvertTo-Json -Depth 10
+
+            try {
+                $isValid = Test-Json -Json $settingsJson -Schema $schema -ErrorAction Stop
+                if ($isValid) {
+                    Write-Host '✓ Settings conform to schema'
+                } else {
+                    throw 'Settings do not conform to the schema'
+                }
+            } catch {
+                Write-Error "Schema validation failed: $_"
+                Write-Error 'Your settings file does not match the expected schema structure.'
+                Write-Error 'Please refer to the schema documentation: https://github.com/PSModule/Get-PSModuleSettings#schema'
+                throw
+            }
+        } else {
+            Write-Warning "Schema file not found at [$schemaPath]. Skipping validation."
+        }
+    }
 } else {
     Write-Host 'No settings file present.'
     $settings = @{}
@@ -134,7 +161,7 @@ $settings = [pscustomobject]@{
             Skip                  = $settings.Publish.Module.Skip ?? $false
             AutoCleanup           = $settings.Publish.Module.AutoCleanup ?? $true
             AutoPatching          = $settings.Publish.Module.AutoPatching ?? $true
-            IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $true
+            IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $trueø
             DatePrereleaseFormat  = $settings.Publish.Module.DatePrereleaseFormat ?? ''
             VersionPrefix         = $settings.Publish.Module.VersionPrefix ?? 'v'
             MajorLabels           = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
@@ -142,7 +169,6 @@ $settings = [pscustomobject]@{
             PatchLabels           = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
             IgnoreLabels          = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
         }
-
     }
     Linter  = [pscustomobject]@{
         Skip                 = $settings.Linter.Skip ?? $false
