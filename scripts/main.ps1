@@ -140,7 +140,7 @@ $settings = [pscustomobject]@{
         CodeCoverage = [pscustomobject]@{
             Skip            = $settings.Test.CodeCoverage.Skip ?? $false
             PercentTarget   = $settings.Test.CodeCoverage.PercentTarget ?? 0
-            StepSummaryMode = $settings.Test.CodeCoverage.StepSummary_Mode ?? 'Missed, Files'
+            StepSummaryMode = $settings.Test.CodeCoverage.StepSummaryMode ?? 'Missed, Files'
         }
     }
     Build   = [pscustomobject]@{
