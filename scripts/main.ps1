@@ -161,7 +161,7 @@ $settings = [pscustomobject]@{
             Skip                  = $settings.Publish.Module.Skip ?? $false
             AutoCleanup           = $settings.Publish.Module.AutoCleanup ?? $true
             AutoPatching          = $settings.Publish.Module.AutoPatching ?? $true
-            IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $trueø
+            IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $true
             DatePrereleaseFormat  = $settings.Publish.Module.DatePrereleaseFormat ?? ''
             VersionPrefix         = $settings.Publish.Module.VersionPrefix ?? 'v'
             MajorLabels           = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
@@ -263,6 +263,22 @@ if ($settings.Test.Skip) {
             Write-Host "Tests found at [$testsPath]"
 
             function Get-TestItemsFromFolder {
+                <#
+                    .SYNOPSIS
+                        Retrieves test items from a specified folder.
+
+                    .DESCRIPTION
+                        This function searches for test-related files in the specified folder.
+                        It looks for configuration files (*.Configuration.ps1), container files (*.Container.ps1),
+                        and test files (*.Tests.ps1) in that order of precedence.
+
+                    .PARAMETER FolderPath
+                        The path to the folder to search for test items.
+
+                    .OUTPUTS
+                        System.IO.FileInfo[]
+                        Returns an array of test-related files found in the folder.
+                #>
                 param ([string]$FolderPath)
 
                 $configFiles = Get-ChildItem -Path $FolderPath -File -Filter '*.Configuration.ps1'
@@ -281,7 +297,22 @@ if ($settings.Test.Skip) {
                 return $testFiles
             }
 
-            function Find-TestDirectories {
+            function Find-TestDirectory {
+                <#
+                    .SYNOPSIS
+                        Finds test directories recursively.
+
+                    .DESCRIPTION
+                        This function recursively searches for all directories starting from the specified path.
+                        It returns a flat array of all directory paths found.
+
+                    .PARAMETER Path
+                        The root path to start searching for directories.
+
+                    .OUTPUTS
+                        System.String[]
+                        Returns an array of directory paths.
+                #>
                 param ([string]$Path)
 
                 $directories = @()
@@ -289,13 +320,13 @@ if ($settings.Test.Skip) {
 
                 foreach ($dir in $childDirs) {
                     $directories += $dir.FullName
-                    $directories += Find-TestDirectories -Path $dir.FullName
+                    $directories += Find-TestDirectory -Path $dir.FullName
                 }
 
                 return $directories
             }
 
-            $allTestFolders = @($testsPath) + (Find-TestDirectories -Path $testsPath)
+            $allTestFolders = @($testsPath) + (Find-TestDirectory -Path $testsPath)
 
             foreach ($folder in $allTestFolders) {
                 $testItems = Get-TestItemsFromFolder -FolderPath $folder
