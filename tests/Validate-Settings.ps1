@@ -31,7 +31,7 @@ Write-Host '✓ Settings retrieved successfully'
 # Display the generated settings JSON
 Write-Host "`n========== Generated Settings JSON =========="
 $settings = $SettingsJson | ConvertFrom-Json
-$settings | ConvertTo-Json -Depth 10
+Write-Host ($settings | ConvertTo-Json -Depth 10)
 Write-Host '=============================================='
 
 # Validate against JSON schema
