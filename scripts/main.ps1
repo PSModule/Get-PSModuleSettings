@@ -1,16 +1,15 @@
 ﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository -Reinstall
 
-$SettingsPath = $PSMODULE_GET_SETTINGS_INPUT_SettingsPath
-$Debug = $PSMODULE_GET_SETTINGS_INPUT_Debug
-$Verbose = $PSMODULE_GET_SETTINGS_INPUT_Verbose
-$Version = $PSMODULE_GET_SETTINGS_INPUT_Version
-$Prerelease = $PSMODULE_GET_SETTINGS_INPUT_Prerelease
-$WorkingDirectory = $PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory
+$settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
+$debug = $env:PSMODULE_GET_SETTINGS_INPUT_Debug
+$verbose = $env:PSMODULE_GET_SETTINGS_INPUT_Verbose
+$version = $env:PSMODULE_GET_SETTINGS_INPUT_Version
+$prerelease = $env:PSMODULE_GET_SETTINGS_INPUT_Prerelease
+$workingDirectory = $env:PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory
 
 LogGroup 'Inputs' {
     [pscustomobject]@{
         PWD          = (Get-Location).Path
-        Name         = $inputName
         SettingsPath = $settingsPath
     } | Format-List | Out-String
 }
@@ -46,14 +45,11 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
 
 LogGroup 'Name' {
     [pscustomobject]@{
-        InputName      = $inputName
         SettingsName   = $settings.Name
         RepositoryName = $env:GITHUB_REPOSITORY_NAME
     } | Format-List | Out-String
 
-    if (![string]::IsNullOrEmpty($inputName)) {
-        $name = $inputName
-    } elseif (![string]::IsNullOrEmpty($settings.Name)) {
+    if (![string]::IsNullOrEmpty($settings.Name)) {
         $name = $settings.Name
     } else {
         $name = $env:GITHUB_REPOSITORY_NAME
@@ -154,6 +150,14 @@ $settings = [pscustomobject]@{
         env                  = $settings.Linter.env ?? @{}
     }
 }
+
+# Add input properties to settings
+$settings | Add-Member -MemberType NoteProperty -Name SettingsPath -Value $settingsPath
+$settings | Add-Member -MemberType NoteProperty -Name Debug -Value $debug
+$settings | Add-Member -MemberType NoteProperty -Name Verbose -Value $verbose
+$settings | Add-Member -MemberType NoteProperty -Name Version -Value $version
+$settings | Add-Member -MemberType NoteProperty -Name Prerelease -Value $prerelease
+$settings | Add-Member -MemberType NoteProperty -Name WorkingDirectory -Value $workingDirectory
 
 # Calculate job run conditions
 LogGroup 'Calculate Job Run Conditions:' {
@@ -323,20 +327,22 @@ LogGroup 'Calculate Job Run Conditions:' {
         })
 
     Write-Host 'Job Run Conditions:'
-    Write-Host "  LintRepository: $($settings.Run.LintRepository)"
-    Write-Host "  BuildModule: $($settings.Run.BuildModule)"
-    Write-Host "  TestSourceCode: $($settings.Run.TestSourceCode)"
-    Write-Host "  LintSourceCode: $($settings.Run.LintSourceCode)"
-    Write-Host "  TestModule: $($settings.Run.TestModule)"
-    Write-Host "  BeforeAllModuleLocal: $($settings.Run.BeforeAllModuleLocal)"
-    Write-Host "  TestModuleLocal: $($settings.Run.TestModuleLocal)"
-    Write-Host "  AfterAllModuleLocal: $($settings.Run.AfterAllModuleLocal)"
-    Write-Host "  GetTestResults: $($settings.Run.GetTestResults)"
-    Write-Host "  GetCodeCoverage: $($settings.Run.GetCodeCoverage)"
-    Write-Host "  PublishModule: $($settings.Run.PublishModule)"
-    Write-Host "  BuildDocs: $($settings.Run.BuildDocs)"
-    Write-Host "  BuildSite: $($settings.Run.BuildSite)"
-    Write-Host "  PublishSite: $($settings.Run.PublishSite)"
+    [pscustomobject]@{
+        LintRepository       = $settings.Run.LintRepository
+        BuildModule          = $settings.Run.BuildModule
+        TestSourceCode       = $settings.Run.TestSourceCode
+        LintSourceCode       = $settings.Run.LintSourceCode
+        TestModule           = $settings.Run.TestModule
+        BeforeAllModuleLocal = $settings.Run.BeforeAllModuleLocal
+        TestModuleLocal      = $settings.Run.TestModuleLocal
+        AfterAllModuleLocal  = $settings.Run.AfterAllModuleLocal
+        GetTestResults       = $settings.Run.GetTestResults
+        GetCodeCoverage      = $settings.Run.GetCodeCoverage
+        PublishModule        = $settings.Run.PublishModule
+        BuildDocs            = $settings.Run.BuildDocs
+        BuildSite            = $settings.Run.BuildSite
+        PublishSite          = $settings.Run.PublishSite
+    } | Format-List | Out-String
 }
 
 LogGroup 'Final settings' {
