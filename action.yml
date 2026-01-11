@@ -6,6 +6,9 @@ branding:
   color: blue
 
 inputs:
+  Name:
+    description: Name of the module.
+    required: false
   SettingsPath:
     description: Path to the settings file (json, yaml/yml, or psd1)
     required: false
@@ -41,6 +44,7 @@ runs:
       uses: PSModule/GitHub-Script@8b9d2739d6896975c0e5448d2021ae2b94b6766a # v1.7.6
       id: Get-PSModuleSettings
       env:
+        PSMODULE_GET_SETTINGS_INPUT_Name: ${{ inputs.Name }}
         PSMODULE_GET_SETTINGS_INPUT_SettingsPath: ${{ inputs.SettingsPath }}
         PSMODULE_GET_SETTINGS_INPUT_Debug: ${{ inputs.Debug }}
         PSMODULE_GET_SETTINGS_INPUT_Verbose: ${{ inputs.Verbose }}

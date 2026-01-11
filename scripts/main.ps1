@@ -1,5 +1,6 @@
 ﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
 
+$name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
 $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
 $debug = $env:PSMODULE_GET_SETTINGS_INPUT_Debug
 $verbose = $env:PSMODULE_GET_SETTINGS_INPUT_Verbose
@@ -10,6 +11,7 @@ $workingDirectory = $env:PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory
 LogGroup 'Inputs' {
     [pscustomobject]@{
         PWD          = (Get-Location).Path
+        Name         = $name
         SettingsPath = $settingsPath
     } | Format-List | Out-String
 }
@@ -71,17 +73,20 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
 
 LogGroup 'Name' {
     [pscustomobject]@{
+        InputName      = $name
         SettingsName   = $settings.Name
         RepositoryName = $env:GITHUB_REPOSITORY_NAME
     } | Format-List | Out-String
 
-    if (![string]::IsNullOrEmpty($settings.Name)) {
+    if (![string]::IsNullOrEmpty($name)) {
+        Write-Host "Using name from input parameter: [$name]"
+    } elseif (![string]::IsNullOrEmpty($settings.Name)) {
         $name = $settings.Name
+        Write-Host "Using name from settings file: [$name]"
     } else {
         $name = $env:GITHUB_REPOSITORY_NAME
+        Write-Host "Using repository name: [$name]"
     }
-
-    Write-Host "Using [$name] as the module name."
 }
 
 $settings = [pscustomobject]@{
