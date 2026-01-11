@@ -33,11 +33,25 @@ jobs:
         with:
           SettingsPath: './tests/scenarios/valid/PSModule.yml'
 
-      - name: Validate Settings Output
+      - name: Verify Action Succeeded
         shell: pwsh
         env:
           SETTINGS_JSON: ${{ steps.get-settings.outputs.Settings }}
-        run: ./tests/Validate-Settings.ps1
+        run: |
+          if ([string]::IsNullOrEmpty($env:SETTINGS_JSON)) {
+            Write-Error 'Action failed to produce settings output'
+            exit 1
+          }
+          Write-Host '✓ Action executed successfully and produced valid output'
+
+          # Verify the output is valid JSON
+          try {
+            $settings = $env:SETTINGS_JSON | ConvertFrom-Json
+            Write-Host "✓ Settings output is valid JSON with Name: $($settings.Name)"
+          } catch {
+            Write-Error "Settings output is not valid JSON: $_"
+            exit 1
+          }
 
   ActionTestInvalidMissingTestConfig:
     name: Action-Test - [Invalid - Missing Test Config]
@@ -49,21 +63,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Action-Test
+      - name: Action-Test (Expect Failure)
         id: get-settings
+        continue-on-error: true
         uses: ./
         with:
           SettingsPath: './tests/scenarios/invalid-missing-test-config/PSModule.yml'
 
-      - name: Validate Settings Output (Expect Failure)
+      - name: Verify Action Failed as Expected
         shell: pwsh
-        env:
-          SETTINGS_JSON: ${{ steps.get-settings.outputs.Settings }}
         run: |
-          $ErrorActionPreference = 'Continue'
-          ./tests/Validate-Settings.ps1
-          if ($LASTEXITCODE -eq 0) {
-            Write-Error 'Expected validation to fail for invalid configuration, but it succeeded'
+          if ('${{ steps.get-settings.outcome }}' -eq 'success') {
+            Write-Error 'Expected action to fail for invalid configuration, but it succeeded'
             exit 1
           }
-          Write-Host '✓ Validation failed as expected for invalid configuration'
+          Write-Host '✓ Action failed as expected for invalid configuration'

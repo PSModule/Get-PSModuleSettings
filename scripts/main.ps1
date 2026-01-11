@@ -58,7 +58,6 @@ if (![string]::IsNullOrEmpty($settingsPath) -and (Test-Path -Path $settingsPath)
             } catch {
                 Write-Error "Schema validation failed: $_"
                 Write-Error 'Your settings file does not match the expected schema structure.'
-                Write-Error 'Please refer to the schema documentation: https://github.com/PSModule/Get-PSModuleSettings#schema'
                 throw
             }
         } else {
@@ -412,6 +411,32 @@ LogGroup 'Final settings' {
             Write-Host ($settings | ConvertTo-Json -Depth 5 | Out-String)
         }
     }
+    Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
 }
 
-Set-GitHubOutput -Name Settings -Value ($settings | ConvertTo-Json -Depth 10)
+LogGroup 'Validate output settings against schema' {
+    $schemaPath = Join-Path $PSScriptRoot 'Settings.schema.json'
+    if (Test-Path -Path $schemaPath) {
+        Write-Host 'Validating output settings against schema...'
+        $schema = Get-Content $schemaPath -Raw
+
+        # Convert output settings to JSON for validation
+        $outputJson = $settings | ConvertTo-Json -Depth 10
+
+        try {
+            $isValid = Test-Json -Json $outputJson -Schema $schema -ErrorAction Stop
+            if ($isValid) {
+                Write-Host '✓ Output settings conform to schema'
+            } else {
+                throw 'Output settings do not conform to the schema'
+            }
+        } catch {
+            Write-Error "Output schema validation failed: $_"
+            Write-Error 'The generated settings object does not match the expected schema structure.'
+            Write-Error 'This indicates a bug in the action. Please report this issue.'
+            throw
+        }
+    } else {
+        Write-Warning "Schema file not found at [$schemaPath]. Skipping output validation."
+    }
+}
