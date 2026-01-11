@@ -225,7 +225,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/testSuite"
+                "$ref": "#/definitions/moduleTestSuite"
               }
             }
           ]
@@ -377,6 +377,33 @@
       "required": [
         "RunsOn",
         "OSName"
+      ]
+    },
+    "moduleTestSuite": {
+      "type": "object",
+      "properties": {
+        "RunsOn": {
+          "type": "string",
+          "description": "GitHub Actions runner to use"
+        },
+        "OSName": {
+          "type": "string",
+          "description": "Operating system name"
+        },
+        "TestPath": {
+          "type": "string",
+          "description": "Relative path to the test file"
+        },
+        "TestName": {
+          "type": "string",
+          "description": "Name of the test"
+        }
+      },
+      "required": [
+        "RunsOn",
+        "OSName",
+        "TestPath",
+        "TestName"
       ]
     }
   }
