@@ -17,8 +17,8 @@ permissions:
   pull-requests: read
 
 jobs:
-  ActionTestBasic:
-    name: Action-Test - [Basic]
+  ActionTestValid:
+    name: Action-Test - [Valid Configuration]
     runs-on: ubuntu-latest
     steps:
       # Need to check out as part of the test, as its a local action
@@ -31,10 +31,39 @@ jobs:
         id: get-settings
         uses: ./
         with:
-          SettingsPath: './tests/PSModule.yml'
+          SettingsPath: './tests/scenarios/valid/PSModule.yml'
 
       - name: Validate Settings Output
         shell: pwsh
         env:
           SETTINGS_JSON: ${{ steps.get-settings.outputs.Settings }}
         run: ./tests/Validate-Settings.ps1
+
+  ActionTestInvalidMissingTestConfig:
+    name: Action-Test - [Invalid - Missing Test Config]
+    runs-on: ubuntu-latest
+    steps:
+      # Need to check out as part of the test, as its a local action
+      - name: Checkout repo
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Action-Test
+        id: get-settings
+        uses: ./
+        with:
+          SettingsPath: './tests/scenarios/invalid-missing-test-config/PSModule.yml'
+
+      - name: Validate Settings Output (Expect Failure)
+        shell: pwsh
+        env:
+          SETTINGS_JSON: ${{ steps.get-settings.outputs.Settings }}
+        run: |
+          $ErrorActionPreference = 'Continue'
+          ./tests/Validate-Settings.ps1
+          if ($LASTEXITCODE -eq 0) {
+            Write-Error 'Expected validation to fail for invalid configuration, but it succeeded'
+            exit 1
+          }
+          Write-Host '✓ Validation failed as expected for invalid configuration'
