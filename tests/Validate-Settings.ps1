@@ -93,8 +93,10 @@ function Test-ObjectStructure {
 $structureErrors = Test-ObjectStructure -Actual $settings -Expected $expectedSettings
 
 if ($structureErrors.Count -gt 0) {
-    Write-Error "Structure validation failed with $($structureErrors.Count) error(s):"
-    $structureErrors | ForEach-Object { Write-Error "  - $_" }
+    Write-Host ''
+    Write-Host "Structure validation failed with $($structureErrors.Count) error(s):" -ForegroundColor Red
+    $structureErrors | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    Write-Error 'Settings structure does not match expected layout. See errors above.'
     exit 1
 }
 
