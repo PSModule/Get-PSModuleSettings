@@ -82,8 +82,8 @@ function Test-ObjectStructure {
             # Both null is fine
             Write-Host "  ✓ Null property: $currentPath"
         } elseif (($null -eq $expectedValue -and $null -ne $actualValue) -or ($null -ne $expectedValue -and $null -eq $actualValue)) {
-            # One null, one not - this might be okay depending on context
-            Write-Host "  ⚠ Null mismatch at $currentPath (Expected: $($null -eq $expectedValue), Actual: $($null -eq $actualValue))"
+            # One null, one not - this is an error
+            $errors += "Null mismatch at $currentPath (Expected null: $($null -eq $expectedValue), Actual null: $($null -eq $actualValue))"
         }
     }
 

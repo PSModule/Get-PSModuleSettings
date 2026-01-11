@@ -254,11 +254,13 @@ if ($settings.Test.Skip) {
     LogGroup 'Module Local Test Suites:' {
         $moduleTestSuites = if ($settings.Test.Module.Skip) {
             Write-Host 'Skipping all module tests.'
+            $null
         } else {
             # Locate the tests directory.
             $testsPath = Resolve-Path 'tests' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path
             if (-not $testsPath) {
                 Write-Warning 'No tests found'
+                return $null
             }
             Write-Host "Tests found at [$testsPath]"
 
