@@ -108,7 +108,44 @@
                 "OSName": "Windows"
             }
         ],
-        "Module": null
+        "Module": [
+            {
+                "RunsOn": "ubuntu-latest",
+                "OSName": "Linux",
+                "TestPath": "./tests/Environment.Tests.ps1",
+                "TestName": "Environment"
+            },
+            {
+                "RunsOn": "macos-latest",
+                "OSName": "macOS",
+                "TestPath": "./tests/Environment.Tests.ps1",
+                "TestName": "Environment"
+            },
+            {
+                "RunsOn": "windows-latest",
+                "OSName": "Windows",
+                "TestPath": "./tests/Environment.Tests.ps1",
+                "TestName": "Environment"
+            },
+            {
+                "RunsOn": "ubuntu-latest",
+                "OSName": "Linux",
+                "TestPath": "./tests/PSModuleTest.Tests.ps1",
+                "TestName": "PSModuleTest"
+            },
+            {
+                "RunsOn": "macos-latest",
+                "OSName": "macOS",
+                "TestPath": "./tests/PSModuleTest.Tests.ps1",
+                "TestName": "PSModuleTest"
+            },
+            {
+                "RunsOn": "windows-latest",
+                "OSName": "Windows",
+                "TestPath": "./tests/PSModuleTest.Tests.ps1",
+                "TestName": "PSModuleTest"
+            }
+        ]
     },
     "SettingsPath": "./tests/PSModule.yml",
     "Debug": "false",
