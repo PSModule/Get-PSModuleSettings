@@ -1,17 +1,3 @@
-# Template-Action
+# Get-PSModuleSettings
 
-A template repository for GitHub Actions
-
-## Usage
-
-### Inputs
-
-### Secrets
-
-### Outputs
-
-### Example
-
-```yaml
-Example here
-```
+This GitHub Action is a part of the [PSModule framework](https://github.com/PSModule).
