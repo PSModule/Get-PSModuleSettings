@@ -117,9 +117,7 @@
             },
             {
                 "RunsOn": "macos-latest",
-                "OSName": "macOS",
-                "TestPath": "./tests/Environment.Tests.ps1",
-                "TestName": "Environment"
+                "OSName": "macOS"
             },
             {
                 "RunsOn": "windows-latest",
