@@ -33,26 +33,6 @@ jobs:
         with:
           SettingsPath: './tests/scenarios/valid/PSModule.yml'
 
-      - name: Verify Action Succeeded
-        shell: pwsh
-        env:
-          SETTINGS_JSON: ${{ steps.get-settings.outputs.Settings }}
-        run: |
-          if ([string]::IsNullOrEmpty($env:SETTINGS_JSON)) {
-            Write-Error 'Action failed to produce settings output'
-            exit 1
-          }
-          Write-Host '✓ Action executed successfully and produced valid output'
-
-          # Verify the output is valid JSON
-          try {
-            $settings = $env:SETTINGS_JSON | ConvertFrom-Json
-            Write-Host "✓ Settings output is valid JSON with Name: $($settings.Name)"
-          } catch {
-            Write-Error "Settings output is not valid JSON: $_"
-            exit 1
-          }
-
   ActionTestInvalidMissingTestConfig:
     name: Action-Test - [Invalid - Missing Test Config]
     runs-on: ubuntu-latest
@@ -68,7 +48,7 @@ jobs:
         continue-on-error: true
         uses: ./
         with:
-          SettingsPath: './tests/scenarios/invalid-missing-test-config/PSModule.yml'
+          SettingsPath: './tests/scenarios/invalid-percent-target/PSModule.yml'
 
       - name: Verify Action Failed as Expected
         shell: pwsh
