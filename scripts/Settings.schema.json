@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/PSModule/Get-PSModuleSettings/schema.json",
+  "$id": "https://raw.githubusercontent.com/PSModule/Get-PSModuleSettings/refs/heads/main/scripts/Settings.schema.json",
   "title": "PSModule Settings",
   "description": "Configuration schema for PSModule GitHub Action settings",
   "type": "object",
