@@ -10,13 +10,13 @@ if (-not $SettingsJson) {
 Write-Host '✓ Settings retrieved successfully'
 
 # Display the generated settings JSON
-Write-Host "========== Generated Settings JSON =========="
+Write-Host '========== Generated Settings JSON =========='
 $settings = $SettingsJson | ConvertFrom-Json
 Write-Host ($settings | ConvertTo-Json -Depth 10)
 Write-Host '=============================================='
 
 # Validate against JSON schema
-Write-Host "Validating settings against JSON schema..."
+Write-Host 'Validating settings against JSON schema...'
 $schemaPath = Join-Path -Path $PSScriptRoot -ChildPath '..' -AdditionalChildPath 'scripts', 'Settings.schema.json'
 $schema = Get-Content $schemaPath -Raw
 $isValid = Test-Json -Json $SettingsJson -Schema $schema
@@ -28,7 +28,7 @@ if (-not $isValid) {
 Write-Host '✓ Settings conform to JSON schema'
 
 # Load expected reference settings
-Write-Host "Comparing with reference settings..."
+Write-Host 'Comparing with reference settings...'
 $referencePath = Join-Path $PSScriptRoot 'Settings.json'
 $expectedSettings = Get-Content $referencePath -Raw | ConvertFrom-Json
 
