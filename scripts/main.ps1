@@ -192,10 +192,17 @@ $settings | Add-Member -MemberType NoteProperty -Name WorkingDirectory -Value $w
 # Calculate job run conditions
 LogGroup 'Calculate Job Run Conditions:' {
     # Common conditions
+    Write-Host 'GitHub event inputs:'
+    [pscustomobject]@{
+        GITHUB_EVENT_NAME                = $env:GITHUB_EVENT_NAME
+        GITHUB_EVENT_ACTION              = $env:GITHUB_EVENT_ACTION
+        GITHUB_EVENT_PULL_REQUEST_MERGED = $env:GITHUB_EVENT_PULL_REQUEST_MERGED
+    } | Format-List | Out-String
+
     $isPR = $env:GITHUB_EVENT_NAME -eq 'pull_request'
-    $isOpenOrUpdatedPR = $isPR -and $env:GITHUB_EVENT_ACTION -ne 'closed'
+    $isOpenOrUpdatedPR = $isPR -and $env:GITHUB_EVENT_ACTION -in @('opened', 'reopened', 'synchronize')
     $isAbandonedPR = $isPR -and $env:GITHUB_EVENT_ACTION -eq 'closed' -and $env:GITHUB_EVENT_PULL_REQUEST_MERGED -ne 'true'
-    $isMergedPR = $isPR -and $env:GITHUB_EVENT_PULL_REQUEST_MERGED -eq 'true'
+    $isMergedPR = $isPR -and $env:GITHUB_EVENT_ACTION -eq 'closed' -and $env:GITHUB_EVENT_PULL_REQUEST_MERGED -eq 'true'
     $isNotAbandonedPR = -not $isAbandonedPR
 
     [pscustomobject]@{
