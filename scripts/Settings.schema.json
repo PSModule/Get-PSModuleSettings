@@ -161,6 +161,18 @@
             "IgnoreLabels": {
               "type": "string",
               "description": "Comma-separated labels that prevent release"
+            },
+            "UsePRTitleAsReleaseName": {
+              "type": "boolean",
+              "description": "Use pull request title as the GitHub release name"
+            },
+            "UsePRBodyAsReleaseNotes": {
+              "type": "boolean",
+              "description": "Use pull request body as the release notes content"
+            },
+            "UsePRTitleAsNotesHeading": {
+              "type": "boolean",
+              "description": "Add pull request title as H1 heading in release notes"
             }
           }
         }
