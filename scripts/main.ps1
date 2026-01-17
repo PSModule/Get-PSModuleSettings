@@ -209,14 +209,20 @@ LogGroup 'Calculate Job Run Conditions:' {
         }
     }
 
-    $pullRequestAction = if ($null -ne $eventData.action) {
-        $eventData.action
+    $pullRequestAction = if ($null -ne $eventData.Action) {
+        $eventData.Action
     } else {
         $env:GITHUB_EVENT_ACTION
     }
 
-    $pullRequestIsMerged = if ($null -ne $eventData.pull_request -and $null -ne $eventData.pull_request.merged) {
-        [bool]$eventData.pull_request.merged
+    $pullRequest = if ($null -ne $eventData.PullRequest) {
+        $eventData.PullRequest
+    } else {
+        $null
+    }
+
+    $pullRequestIsMerged = if ($null -ne $pullRequest -and $null -ne $pullRequest.Merged) {
+        [bool]$pullRequest.Merged
     } else {
         $false
     }
