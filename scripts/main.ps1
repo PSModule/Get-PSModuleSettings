@@ -1,4 +1,4 @@
-'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
+﻿'powershell-yaml', 'Hashtable' | Install-PSResource -Repository PSGallery -TrustRepository
 
 $name = $env:PSMODULE_GET_SETTINGS_INPUT_Name
 $settingsPath = $env:PSMODULE_GET_SETTINGS_INPUT_SettingsPath
@@ -209,24 +209,20 @@ LogGroup 'Calculate Job Run Conditions:' {
         }
     }
 
-    $pullRequestAction = if ($null -ne $eventData.action) {
-        $eventData.action
-    } elseif ($null -ne $eventData.Action) {
+    $pullRequestAction = if ($null -ne $eventData.Action) {
         $eventData.Action
     } else {
         $env:GITHUB_EVENT_ACTION
     }
 
-    $pullRequest = if ($null -ne $eventData.pull_request) {
-        $eventData.pull_request
-    } elseif ($null -ne $eventData.PullRequest) {
+    $pullRequest = if ($null -ne $eventData.PullRequest) {
         $eventData.PullRequest
     } else {
         $null
     }
 
-    $pullRequestIsMerged = if ($null -ne $pullRequest -and $null -ne $pullRequest.merged) {
-        [bool]$pullRequest.merged
+    $pullRequestIsMerged = if ($null -ne $pullRequest -and $null -ne $pullRequest.Merged) {
+        [bool]$pullRequest.Merged
     } else {
         $false
     }
