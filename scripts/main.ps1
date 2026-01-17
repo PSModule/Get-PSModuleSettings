@@ -192,17 +192,46 @@ $settings | Add-Member -MemberType NoteProperty -Name WorkingDirectory -Value $w
 # Calculate job run conditions
 LogGroup 'Calculate Job Run Conditions:' {
     # Common conditions
+    $eventData = $null
+    try {
+        $eventData = Get-GitHubEventData -ErrorAction Stop
+    } catch {
+        if (-not [string]::IsNullOrEmpty($env:GITHUB_EVENT_PATH) -and (Test-Path -Path $env:GITHUB_EVENT_PATH)) {
+            $eventData = Get-Content -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+        }
+    }
+
+    LogGroup 'GitHub Event Data' {
+        if ($null -ne $eventData) {
+            Write-Host ($eventData | ConvertTo-Json -Depth 10 | Out-String)
+        } else {
+            Write-Host 'No event data available.'
+        }
+    }
+
+    $pullRequestAction = if ($null -ne $eventData.action) {
+        $eventData.action
+    } else {
+        $env:GITHUB_EVENT_ACTION
+    }
+
+    $pullRequestIsMerged = if ($null -ne $eventData.pull_request -and $null -ne $eventData.pull_request.merged) {
+        [bool]$eventData.pull_request.merged
+    } else {
+        $false
+    }
+
     Write-Host 'GitHub event inputs:'
     [pscustomobject]@{
         GITHUB_EVENT_NAME                = $env:GITHUB_EVENT_NAME
-        GITHUB_EVENT_ACTION              = $env:GITHUB_EVENT_ACTION
-        GITHUB_EVENT_PULL_REQUEST_MERGED = $env:GITHUB_EVENT_PULL_REQUEST_MERGED
+        GITHUB_EVENT_ACTION              = $pullRequestAction
+        GITHUB_EVENT_PULL_REQUEST_MERGED = $pullRequestIsMerged
     } | Format-List | Out-String
 
     $isPR = $env:GITHUB_EVENT_NAME -eq 'pull_request'
-    $isOpenOrUpdatedPR = $isPR -and $env:GITHUB_EVENT_ACTION -in @('opened', 'reopened', 'synchronize')
-    $isAbandonedPR = $isPR -and $env:GITHUB_EVENT_ACTION -eq 'closed' -and $env:GITHUB_EVENT_PULL_REQUEST_MERGED -ne 'true'
-    $isMergedPR = $isPR -and $env:GITHUB_EVENT_ACTION -eq 'closed' -and $env:GITHUB_EVENT_PULL_REQUEST_MERGED -eq 'true'
+    $isOpenOrUpdatedPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize')
+    $isAbandonedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -ne $true
+    $isMergedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -eq $true
     $isNotAbandonedPR = -not $isAbandonedPR
 
     [pscustomobject]@{
