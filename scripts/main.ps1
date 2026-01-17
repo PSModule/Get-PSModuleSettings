@@ -162,16 +162,19 @@ $settings = [pscustomobject]@{
     }
     Publish = [pscustomobject]@{
         Module = [pscustomobject]@{
-            Skip                  = $settings.Publish.Module.Skip ?? $false
-            AutoCleanup           = $settings.Publish.Module.AutoCleanup ?? $true
-            AutoPatching          = $settings.Publish.Module.AutoPatching ?? $true
-            IncrementalPrerelease = $settings.Publish.Module.IncrementalPrerelease ?? $true
-            DatePrereleaseFormat  = $settings.Publish.Module.DatePrereleaseFormat ?? ''
-            VersionPrefix         = $settings.Publish.Module.VersionPrefix ?? 'v'
-            MajorLabels           = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
-            MinorLabels           = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
-            PatchLabels           = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
-            IgnoreLabels          = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
+            Skip                     = $settings.Publish.Module.Skip ?? $false
+            AutoCleanup              = $settings.Publish.Module.AutoCleanup ?? $true
+            AutoPatching             = $settings.Publish.Module.AutoPatching ?? $true
+            IncrementalPrerelease    = $settings.Publish.Module.IncrementalPrerelease ?? $true
+            DatePrereleaseFormat     = $settings.Publish.Module.DatePrereleaseFormat ?? ''
+            VersionPrefix            = $settings.Publish.Module.VersionPrefix ?? 'v'
+            MajorLabels              = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
+            MinorLabels              = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
+            PatchLabels              = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
+            IgnoreLabels             = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
+            UsePRTitleAsReleaseName  = $settings.Publish.Module.UsePRTitleAsReleaseName ?? $false
+            UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
+            UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
         }
     }
     Linter  = [pscustomobject]@{
