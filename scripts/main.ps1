@@ -233,7 +233,6 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
-    # Note: Cleanup is a separate decision handled by AutoCleanup
     $releaseType = if ($isMergedPR -and $isTargetDefaultBranch) {
         'Release'
     } elseif ($shouldPrerelease) {
