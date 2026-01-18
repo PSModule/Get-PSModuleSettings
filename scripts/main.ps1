@@ -195,47 +195,27 @@ $settings | Add-Member -MemberType NoteProperty -Name WorkingDirectory -Value $w
 
 # Calculate job run conditions
 LogGroup 'Calculate Job Run Conditions:' {
-    # Common conditions
-    $eventData = $null
-    try {
-        $eventData = Get-GitHubEventData -ErrorAction Stop
-    } catch {
-        if (-not [string]::IsNullOrEmpty($env:GITHUB_EVENT_PATH) -and (Test-Path -Path $env:GITHUB_EVENT_PATH)) {
-            $eventData = Get-Content -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-        }
-    }
+    $eventData = Get-GitHubEventData -ErrorAction Stop
 
     LogGroup 'GitHub Event Data' {
-        if ($null -ne $eventData) {
-            Write-Host ($eventData | ConvertTo-Json -Depth 10 | Out-String)
-        } else {
-            Write-Host 'No event data available.'
-        }
+        $eventData | ConvertTo-Json -Depth 10 | Out-String
     }
 
-    $pullRequestAction = if ($null -ne $eventData.Action) {
-        $eventData.Action
-    } else {
-        $env:GITHUB_EVENT_ACTION
-    }
-
-    $pullRequest = if ($null -ne $eventData.PullRequest) {
-        $eventData.PullRequest
-    } else {
-        $null
-    }
-
-    $pullRequestIsMerged = if ($null -ne $pullRequest -and $null -ne $pullRequest.Merged) {
-        [bool]$pullRequest.Merged
-    } else {
-        $false
-    }
+    $pullRequestAction = $eventData.Action
+    $pullRequest = $eventData.PullRequest
+    $pullRequestIsMerged = $pullRequest.Merged
+    $targetBranch = $pullRequest.Base.Ref
+    $defaultBranch = $eventData.Repository.default_branch
+    $isTargetDefaultBranch = $targetBranch -eq $defaultBranch
 
     Write-Host 'GitHub event inputs:'
     [pscustomobject]@{
         GITHUB_EVENT_NAME                = $env:GITHUB_EVENT_NAME
         GITHUB_EVENT_ACTION              = $pullRequestAction
         GITHUB_EVENT_PULL_REQUEST_MERGED = $pullRequestIsMerged
+        TargetBranch                     = $targetBranch
+        DefaultBranch                    = $defaultBranch
+        IsTargetDefaultBranch            = $isTargetDefaultBranch
     } | Format-List | Out-String
 
     $isPR = $env:GITHUB_EVENT_NAME -eq 'pull_request'
@@ -254,10 +234,13 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     # Determine ReleaseType - single source of truth for what Publish-PSModule should do
     # Values: 'Release', 'Prerelease', 'Cleanup', 'None'
+    # Release only happens when PR is merged into the default branch
     $releaseType = if (-not $isPR) {
         'None'
-    } elseif ($isMergedPR) {
+    } elseif ($isMergedPR -and $isTargetDefaultBranch) {
         'Release'
+    } elseif ($isMergedPR -and -not $isTargetDefaultBranch) {
+        'None'  # Merged to non-default branch - no release
     } elseif ($isAbandonedPR) {
         'Cleanup'
     } elseif ($shouldPrerelease) {
@@ -267,13 +250,14 @@ LogGroup 'Calculate Job Run Conditions:' {
     }
 
     [pscustomobject]@{
-        isPR              = $isPR
-        isOpenOrUpdatedPR = $isOpenOrUpdatedPR
-        isAbandonedPR     = $isAbandonedPR
-        isMergedPR        = $isMergedPR
-        isNotAbandonedPR  = $isNotAbandonedPR
-        shouldPrerelease  = $shouldPrerelease
-        ReleaseType       = $releaseType
+        isPR                  = $isPR
+        isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
+        isAbandonedPR         = $isAbandonedPR
+        isMergedPR            = $isMergedPR
+        isNotAbandonedPR      = $isNotAbandonedPR
+        isTargetDefaultBranch = $isTargetDefaultBranch
+        shouldPrerelease      = $shouldPrerelease
+        ReleaseType           = $releaseType
     } | Format-List | Out-String
 }
 
@@ -467,7 +451,7 @@ LogGroup 'Calculate Job Run Conditions:' {
         ReleaseType          = $releaseType  # 'Release', 'Prerelease', 'Cleanup', or 'None'
         BuildDocs            = $isNotAbandonedPR -and (-not $settings.Build.Docs.Skip)
         BuildSite            = $isNotAbandonedPR -and (-not $settings.Build.Site.Skip)
-        PublishSite          = $isMergedPR
+        PublishSite          = $isMergedPR -and $isTargetDefaultBranch
     }
     $settings | Add-Member -MemberType NoteProperty -Name Run -Value $run
 
