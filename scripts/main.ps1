@@ -163,7 +163,7 @@ $settings = [pscustomobject]@{
     Publish = [pscustomobject]@{
         Module = [pscustomobject]@{
             Skip                     = $settings.Publish.Module.Skip ?? $false
-            CleanupPrereleases       = $settings.Publish.Module.CleanupPrereleases ?? $true
+            AutoCleanup              = $settings.Publish.Module.AutoCleanup ?? $true
             AutoPatching             = $settings.Publish.Module.AutoPatching ?? $true
             IncrementalPrerelease    = $settings.Publish.Module.IncrementalPrerelease ?? $true
             DatePrereleaseFormat     = $settings.Publish.Module.DatePrereleaseFormat ?? ''
@@ -234,7 +234,7 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
-    # Note: Cleanup is a separate decision handled by CleanupPrereleases
+    # Note: Cleanup is a separate decision handled by AutoCleanup
     $releaseType = if ($isMergedPR -and $isTargetDefaultBranch) {
         'Release'
     } elseif ($shouldPrerelease) {
@@ -426,12 +426,12 @@ if ($settings.Test.Skip) {
 # Calculate job-specific conditions and add to settings
 LogGroup 'Calculate Job Run Conditions:' {
     # Calculate if prereleases should be cleaned up:
-    # True if (Release or Abandoned PR) AND user has CleanupPrereleases enabled (defaults to true)
-    $shouldCleanupPrereleases = (($releaseType -eq 'Release') -or $isAbandonedPR) -and ($settings.Publish.Module.CleanupPrereleases -eq $true)
+    # True if (Release or Abandoned PR) AND user has AutoCleanup enabled (defaults to true)
+    $shouldAutoCleanup = (($releaseType -eq 'Release') -or $isAbandonedPR) -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force
-    $settings.Publish.Module.CleanupPrereleases = $shouldCleanupPrereleases
+    $settings.Publish.Module.AutoCleanup = $shouldAutoCleanup
 
     # Create Run object with all job-specific conditions
     $run = [pscustomobject]@{
@@ -449,7 +449,7 @@ LogGroup 'Calculate Job Run Conditions:' {
         GetCodeCoverage      = $isNotAbandonedPR -and (-not $settings.Test.CodeCoverage.Skip) -and (
             ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
         )
-        PublishModule        = ($releaseType -ne 'None') -or $shouldCleanupPrereleases
+        PublishModule        = ($releaseType -ne 'None') -or $shouldAutoCleanup
         BuildDocs            = $isNotAbandonedPR -and (-not $settings.Build.Docs.Skip)
         BuildSite            = $isNotAbandonedPR -and (-not $settings.Build.Site.Skip)
         PublishSite          = $isMergedPR -and $isTargetDefaultBranch
