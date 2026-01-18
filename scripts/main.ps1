@@ -172,6 +172,7 @@ $settings = [pscustomobject]@{
             MinorLabels              = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
             PatchLabels              = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
             IgnoreLabels             = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
+            PrereleaseLabels         = $settings.Publish.Module.PrereleaseLabels ?? 'prerelease'
             UsePRTitleAsReleaseName  = $settings.Publish.Module.UsePRTitleAsReleaseName ?? $false
             UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
@@ -243,12 +244,36 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isMergedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -eq $true
     $isNotAbandonedPR = -not $isAbandonedPR
 
+    # Check if a prerelease label was added or exists on the PR
+    $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
+    $prLabels = @($pullRequest.labels.name)
+    $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
+    $labelName = $eventData.Label.name
+    $isPrereleaseLabeled = $pullRequestAction -eq 'labeled' -and ($prereleaseLabels -contains $labelName)
+    $shouldPrerelease = $isPR -and (($isOpenOrUpdatedPR -and $hasPrereleaseLabel) -or $isPrereleaseLabeled)
+
+    # Determine ReleaseType - single source of truth for what Publish-PSModule should do
+    # Values: 'Release', 'Prerelease', 'Cleanup', 'None'
+    $releaseType = if (-not $isPR) {
+        'None'
+    } elseif ($isMergedPR) {
+        'Release'
+    } elseif ($isAbandonedPR) {
+        'Cleanup'
+    } elseif ($shouldPrerelease) {
+        'Prerelease'
+    } else {
+        'None'
+    }
+
     [pscustomobject]@{
         isPR              = $isPR
         isOpenOrUpdatedPR = $isOpenOrUpdatedPR
         isAbandonedPR     = $isAbandonedPR
         isMergedPR        = $isMergedPR
         isNotAbandonedPR  = $isNotAbandonedPR
+        shouldPrerelease  = $shouldPrerelease
+        ReleaseType       = $releaseType
     } | Format-List | Out-String
 }
 
@@ -438,7 +463,8 @@ LogGroup 'Calculate Job Run Conditions:' {
         GetCodeCoverage      = $isNotAbandonedPR -and (-not $settings.Test.CodeCoverage.Skip) -and (
             ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
         )
-        PublishModule        = $isPR -and ($isAbandonedPR -or ($isOpenOrUpdatedPR -or $isMergedPR))
+        PublishModule        = $releaseType -ne 'None'
+        ReleaseType          = $releaseType  # 'Release', 'Prerelease', 'Cleanup', or 'None'
         BuildDocs            = $isNotAbandonedPR -and (-not $settings.Build.Docs.Skip)
         BuildSite            = $isNotAbandonedPR -and (-not $settings.Build.Site.Skip)
         PublishSite          = $isMergedPR

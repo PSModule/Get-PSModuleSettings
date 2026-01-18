@@ -162,6 +162,10 @@
               "type": "string",
               "description": "Comma-separated labels that prevent release"
             },
+            "PrereleaseLabels": {
+              "type": "string",
+              "description": "Comma-separated labels that trigger a prerelease"
+            },
             "UsePRTitleAsReleaseName": {
               "type": "boolean",
               "description": "Use pull request title as the GitHub release name"
@@ -327,6 +331,11 @@
         "PublishModule": {
           "type": "boolean",
           "description": "Publish the module"
+        },
+        "ReleaseType": {
+          "type": "string",
+          "enum": ["Release", "Prerelease", "Cleanup", "None"],
+          "description": "The type of release to create: Release (stable), Prerelease, Cleanup (delete old prereleases), or None"
         },
         "BuildDocs": {
           "type": "boolean",
