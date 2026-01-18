@@ -280,10 +280,13 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     # Determine ReleaseType - single source of truth for what Publish-PSModule should do
     # Values: 'Release', 'Prerelease', 'Cleanup', 'None'
+    # Release only happens when PR is merged into the default branch
     $releaseType = if (-not $isPR) {
         'None'
-    } elseif ($isMergedPR) {
+    } elseif ($isMergedPR -and $isTargetDefaultBranch) {
         'Release'
+    } elseif ($isMergedPR -and -not $isTargetDefaultBranch) {
+        'None'  # Merged to non-default branch - no release
     } elseif ($isAbandonedPR) {
         'Cleanup'
     } elseif ($shouldPrerelease) {
