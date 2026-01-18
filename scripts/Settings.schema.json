@@ -128,7 +128,7 @@
             },
             "AutoCleanup": {
               "type": "boolean",
-              "description": "Automatically cleanup after publish"
+              "description": "When enabled (default: true), automatically cleans up old prerelease tags when merging to main or when a PR is abandoned"
             },
             "AutoPatching": {
               "type": "boolean",
@@ -177,6 +177,15 @@
             "UsePRTitleAsNotesHeading": {
               "type": "boolean",
               "description": "Add pull request title as H1 heading in release notes"
+            },
+            "ReleaseType": {
+              "type": "string",
+              "enum": [
+                "Release",
+                "Prerelease",
+                "None"
+              ],
+              "description": "The type of release to create: Release (stable), Prerelease, or None."
             }
           }
         }
@@ -331,11 +340,6 @@
         "PublishModule": {
           "type": "boolean",
           "description": "Publish the module"
-        },
-        "ReleaseType": {
-          "type": "string",
-          "enum": ["Release", "Prerelease", "Cleanup", "None"],
-          "description": "The type of release to create: Release (stable), Prerelease, Cleanup (delete old prereleases), or None"
         },
         "BuildDocs": {
           "type": "boolean",
