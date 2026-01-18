@@ -177,6 +177,15 @@
             "UsePRTitleAsNotesHeading": {
               "type": "boolean",
               "description": "Add pull request title as H1 heading in release notes"
+            },
+            "ReleaseType": {
+              "type": "string",
+              "enum": [
+                "Release",
+                "Prerelease",
+                "None"
+              ],
+              "description": "The type of release to create: Release (stable), Prerelease, or None."
             }
           }
         }
@@ -331,15 +340,6 @@
         "PublishModule": {
           "type": "boolean",
           "description": "Publish the module"
-        },
-        "ReleaseType": {
-          "type": "string",
-          "enum": [
-            "Release",
-            "Prerelease",
-            "None"
-          ],
-          "description": "The type of release to create: Release (stable), Prerelease, or None."
         },
         "BuildDocs": {
           "type": "boolean",
