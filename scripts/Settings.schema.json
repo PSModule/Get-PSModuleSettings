@@ -126,7 +126,7 @@
               "type": "boolean",
               "description": "Skip module publish"
             },
-            "CleanupPrereleases": {
+            "AutoCleanup": {
               "type": "boolean",
               "description": "When enabled (default: true), automatically cleans up old prerelease tags when merging to main or when a PR is abandoned"
             },
