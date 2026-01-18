@@ -451,7 +451,7 @@ LogGroup 'Calculate Job Run Conditions:' {
         ReleaseType          = $releaseType  # 'Release', 'Prerelease', 'Cleanup', or 'None'
         BuildDocs            = $isNotAbandonedPR -and (-not $settings.Build.Docs.Skip)
         BuildSite            = $isNotAbandonedPR -and (-not $settings.Build.Site.Skip)
-        PublishSite          = $isMergedPR
+        PublishSite          = $isMergedPR -and $isTargetDefaultBranch
     }
     $settings | Add-Member -MemberType NoteProperty -Name Run -Value $run
 
