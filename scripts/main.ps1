@@ -249,7 +249,8 @@ LogGroup 'Calculate Job Run Conditions:' {
     $prLabels = @($pullRequest.labels.name)
     $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
     $labelName = $eventData.Label.name
-    $isPrereleaseLabeled = $isPR -and $pullRequestAction -eq 'labeled' -and ($prereleaseLabels -contains $labelName)
+    $isPrereleaseLabeled = $pullRequestAction -eq 'labeled' -and ($prereleaseLabels -contains $labelName)
+    $shouldPrerelease = $isPR -and (($isOpenOrUpdatedPR -and $hasPrereleaseLabel) -or $isPrereleaseLabeled)
 
     # Determine ReleaseType - single source of truth for what Publish-PSModule should do
     # Values: 'Release', 'Prerelease', 'Cleanup', 'None'
@@ -259,23 +260,20 @@ LogGroup 'Calculate Job Run Conditions:' {
         'Release'
     } elseif ($isAbandonedPR) {
         'Cleanup'
-    } elseif ($isOpenOrUpdatedPR -and $hasPrereleaseLabel) {
-        'Prerelease'
-    } elseif ($isPrereleaseLabeled) {
+    } elseif ($shouldPrerelease) {
         'Prerelease'
     } else {
         'None'
     }
 
     [pscustomobject]@{
-        isPR                 = $isPR
-        isOpenOrUpdatedPR    = $isOpenOrUpdatedPR
-        isAbandonedPR        = $isAbandonedPR
-        isMergedPR           = $isMergedPR
-        isNotAbandonedPR     = $isNotAbandonedPR
-        hasPrereleaseLabel   = $hasPrereleaseLabel
-        isPrereleaseLabeled  = $isPrereleaseLabeled
-        ReleaseType          = $releaseType
+        isPR              = $isPR
+        isOpenOrUpdatedPR = $isOpenOrUpdatedPR
+        isAbandonedPR     = $isAbandonedPR
+        isMergedPR        = $isMergedPR
+        isNotAbandonedPR  = $isNotAbandonedPR
+        shouldPrerelease  = $shouldPrerelease
+        ReleaseType       = $releaseType
     } | Format-List | Out-String
 }
 
