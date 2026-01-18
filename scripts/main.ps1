@@ -231,11 +231,37 @@ LogGroup 'Calculate Job Run Conditions:' {
         $false
     }
 
+    # Get target branch (the branch the PR is merging into)
+    $targetBranch = if ($null -ne $pullRequest -and $null -ne $pullRequest.Base.Ref) {
+        $pullRequest.Base.Ref
+    } else {
+        $null
+    }
+
+    # Get default branch from repository info
+    $defaultBranch = if ($null -ne $eventData.Repository.DefaultBranch) {
+        $eventData.Repository.DefaultBranch
+    } elseif ($null -ne $eventData.Repository.default_branch) {
+        $eventData.Repository.default_branch
+    } else {
+        $env:GITHUB_DEFAULT_BRANCH
+    }
+
+    # Check if target branch is the default branch
+    $isTargetDefaultBranch = if ($null -ne $targetBranch -and $null -ne $defaultBranch) {
+        $targetBranch -eq $defaultBranch
+    } else {
+        $false
+    }
+
     Write-Host 'GitHub event inputs:'
     [pscustomobject]@{
         GITHUB_EVENT_NAME                = $env:GITHUB_EVENT_NAME
         GITHUB_EVENT_ACTION              = $pullRequestAction
         GITHUB_EVENT_PULL_REQUEST_MERGED = $pullRequestIsMerged
+        TargetBranch                     = $targetBranch
+        DefaultBranch                    = $defaultBranch
+        IsTargetDefaultBranch            = $isTargetDefaultBranch
     } | Format-List | Out-String
 
     $isPR = $env:GITHUB_EVENT_NAME -eq 'pull_request'
@@ -267,13 +293,14 @@ LogGroup 'Calculate Job Run Conditions:' {
     }
 
     [pscustomobject]@{
-        isPR              = $isPR
-        isOpenOrUpdatedPR = $isOpenOrUpdatedPR
-        isAbandonedPR     = $isAbandonedPR
-        isMergedPR        = $isMergedPR
-        isNotAbandonedPR  = $isNotAbandonedPR
-        shouldPrerelease  = $shouldPrerelease
-        ReleaseType       = $releaseType
+        isPR                  = $isPR
+        isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
+        isAbandonedPR         = $isAbandonedPR
+        isMergedPR            = $isMergedPR
+        isNotAbandonedPR      = $isNotAbandonedPR
+        isTargetDefaultBranch = $isTargetDefaultBranch
+        shouldPrerelease      = $shouldPrerelease
+        ReleaseType           = $releaseType
     } | Format-List | Out-String
 }
 
