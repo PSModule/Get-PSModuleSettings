@@ -195,64 +195,18 @@ $settings | Add-Member -MemberType NoteProperty -Name WorkingDirectory -Value $w
 
 # Calculate job run conditions
 LogGroup 'Calculate Job Run Conditions:' {
-    # Common conditions
-    $eventData = $null
-    try {
-        $eventData = Get-GitHubEventData -ErrorAction Stop
-    } catch {
-        if (-not [string]::IsNullOrEmpty($env:GITHUB_EVENT_PATH) -and (Test-Path -Path $env:GITHUB_EVENT_PATH)) {
-            $eventData = Get-Content -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-        }
-    }
+    $eventData = Get-GitHubEventData -ErrorAction Stop
 
     LogGroup 'GitHub Event Data' {
-        if ($null -ne $eventData) {
-            Write-Host ($eventData | ConvertTo-Json -Depth 10 | Out-String)
-        } else {
-            Write-Host 'No event data available.'
-        }
+        $eventData | ConvertTo-Json -Depth 10 | Out-String
     }
 
-    $pullRequestAction = if ($null -ne $eventData.Action) {
-        $eventData.Action
-    } else {
-        $env:GITHUB_EVENT_ACTION
-    }
-
-    $pullRequest = if ($null -ne $eventData.PullRequest) {
-        $eventData.PullRequest
-    } else {
-        $null
-    }
-
-    $pullRequestIsMerged = if ($null -ne $pullRequest -and $null -ne $pullRequest.Merged) {
-        [bool]$pullRequest.Merged
-    } else {
-        $false
-    }
-
-    # Get target branch (the branch the PR is merging into)
-    $targetBranch = if ($null -ne $pullRequest -and $null -ne $pullRequest.Base.Ref) {
-        $pullRequest.Base.Ref
-    } else {
-        $null
-    }
-
-    # Get default branch from repository info
-    $defaultBranch = if ($null -ne $eventData.Repository.DefaultBranch) {
-        $eventData.Repository.DefaultBranch
-    } elseif ($null -ne $eventData.Repository.default_branch) {
-        $eventData.Repository.default_branch
-    } else {
-        $env:GITHUB_DEFAULT_BRANCH
-    }
-
-    # Check if target branch is the default branch
-    $isTargetDefaultBranch = if ($null -ne $targetBranch -and $null -ne $defaultBranch) {
-        $targetBranch -eq $defaultBranch
-    } else {
-        $false
-    }
+    $pullRequestAction = $eventData.Action
+    $pullRequest = $eventData.PullRequest
+    $pullRequestIsMerged = $pullRequest.Merged
+    $targetBranch = $pullRequest.Base.Ref
+    $defaultBranch = $eventData.Repository.default_branch
+    $isTargetDefaultBranch = $targetBranch -eq $defaultBranch
 
     Write-Host 'GitHub event inputs:'
     [pscustomobject]@{
