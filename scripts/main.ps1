@@ -224,13 +224,12 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isMergedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -eq $true
     $isNotAbandonedPR = -not $isAbandonedPR
 
-    # Check if a prerelease label was added or exists on the PR
+    # Check if a prerelease label exists on the PR
     $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
     $prLabels = @($pullRequest.labels.name)
     $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
-    $labelName = $eventData.Label.name
-    $isPrereleaseLabeled = $pullRequestAction -eq 'labeled' -and ($prereleaseLabels -contains $labelName)
-    $shouldPrerelease = $isPR -and (($isOpenOrUpdatedPR -and $hasPrereleaseLabel) -or $isPrereleaseLabeled)
+    $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
+    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
@@ -246,10 +245,12 @@ LogGroup 'Calculate Job Run Conditions:' {
     [pscustomobject]@{
         isPR                  = $isPR
         isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
+        isOpenOrLabeledPR     = $isOpenOrLabeledPR
         isAbandonedPR         = $isAbandonedPR
         isMergedPR            = $isMergedPR
         isNotAbandonedPR      = $isNotAbandonedPR
         isTargetDefaultBranch = $isTargetDefaultBranch
+        hasPrereleaseLabel    = $hasPrereleaseLabel
         shouldPrerelease      = $shouldPrerelease
         ReleaseType           = $releaseType
     } | Format-List | Out-String
