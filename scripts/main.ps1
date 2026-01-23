@@ -282,12 +282,15 @@ LogGroup 'Calculate Job Run Conditions:' {
 ## ℹ️ No Significant Changes Detected
 
 This PR does not contain changes to files that would trigger a new release:
-- ``src/**`` - Module source code
-- ``examples/**`` - Example scripts
-- ``README.md`` - Documentation
-- ``.github/workflows/Process-PSModule.yml`` - Workflow configuration
 
-**Build and test stages will be skipped** for this PR.
+| Path | Description |
+| :--- | :---------- |
+| ``src/**`` | Module source code |
+| ``examples/**`` | Example scripts |
+| ``README.md`` | Documentation |
+| ``.github/workflows/Process-PSModule.yml`` | Workflow configuration |
+
+**Build, test, and publish stages will be skipped** for this PR.
 
 If you believe this is incorrect, please verify that your changes are in the correct locations.
 "@
