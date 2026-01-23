@@ -276,7 +276,7 @@ LogGroup 'Calculate Job Run Conditions:' {
             } else {
                 Write-Host '✗ No important files changed - build/test stages will be skipped'
 
-                # Add a comment to open PRs explaining why build/test is skipped
+                # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
                     $commentBody = @"
 ## ℹ️ No Significant Changes Detected
@@ -291,8 +291,13 @@ This PR does not contain changes to files that would trigger a new release:
 
 If you believe this is incorrect, please verify that your changes are in the correct locations.
 "@
-                    Write-Host 'Adding comment to PR about skipped stages...'
-                    $null = Invoke-GitHubAPI -Method POST -ApiEndpoint "/repos/$owner/$repo/issues/$prNumber/comments" -Body (@{ body = $commentBody } | ConvertTo-Json)
+                    try {
+                        Write-Host 'Adding comment to PR about skipped stages...'
+                        $null = Invoke-GitHubAPI -Method POST -ApiEndpoint "/repos/$owner/$repo/issues/$prNumber/comments" -Body (@{ body = $commentBody } | ConvertTo-Json)
+                        Write-Host '✓ Comment added successfully'
+                    } catch {
+                        Write-Warning "Could not add PR comment (may need 'issues: write' permission): $_"
+                    }
                 }
             }
         }
