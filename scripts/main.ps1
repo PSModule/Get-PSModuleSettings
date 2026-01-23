@@ -279,7 +279,7 @@ LogGroup 'Calculate Job Run Conditions:' {
                 # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
                     $commentBody = @"
-## ℹ️ No Significant Changes Detected
+### No Significant Changes Detected
 
 This PR does not contain changes to files that would trigger a new release:
 
