@@ -275,6 +275,25 @@ LogGroup 'Calculate Job Run Conditions:' {
                 Write-Host '✓ Important files have changed - build/test stages will run'
             } else {
                 Write-Host '✗ No important files changed - build/test stages will be skipped'
+
+                # Add a comment to open PRs explaining why build/test is skipped
+                if ($isOpenOrUpdatedPR) {
+                    $commentBody = @"
+## ℹ️ No Significant Changes Detected
+
+This PR does not contain changes to files that would trigger a new release:
+- ``src/**`` - Module source code
+- ``examples/**`` - Example scripts
+- ``README.md`` - Documentation
+- ``.github/workflows/Process-PSModule.yml`` - Workflow configuration
+
+**Build and test stages will be skipped** for this PR.
+
+If you believe this is incorrect, please verify that your changes are in the correct locations.
+"@
+                    Write-Host 'Adding comment to PR about skipped stages...'
+                    Add-GitHubPullRequestComment -Owner $owner -Repo $repo -PullRequestNumber $prNumber -Body $commentBody
+                }
             }
         }
     } else {
