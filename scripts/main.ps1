@@ -229,17 +229,6 @@ LogGroup 'Calculate Job Run Conditions:' {
     $prLabels = @($pullRequest.labels.name)
     $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
     $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
-    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel
-
-    # Determine ReleaseType - what type of release to create
-    # Values: 'Release', 'Prerelease', 'None'
-    $releaseType = if ($isMergedPR -and $isTargetDefaultBranch) {
-        'Release'
-    } elseif ($shouldPrerelease) {
-        'Prerelease'
-    } else {
-        'None'
-    }
 
     # Check if important files have changed in the PR
     # Important files for module and docs publish:
@@ -285,13 +274,27 @@ LogGroup 'Calculate Job Run Conditions:' {
             if ($hasImportantChanges) {
                 Write-Host '✓ Important files have changed - build/test stages will run'
             } else {
-                Write-Host '✗ No important files changed - build/test stages may be skipped for open PRs'
+                Write-Host '✗ No important files changed - build/test stages will be skipped'
             }
         }
     } else {
         # Not a PR event or no PR number - consider as having important changes (e.g., workflow_dispatch, schedule)
         $hasImportantChanges = $true
         Write-Host 'Not a PR event or missing PR number - treating as having important changes'
+    }
+
+    # Prerelease requires both: prerelease label AND important file changes
+    # No point creating a prerelease if only non-module files changed
+    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel -and $hasImportantChanges
+
+    # Determine ReleaseType - what type of release to create
+    # Values: 'Release', 'Prerelease', 'None'
+    $releaseType = if ($isMergedPR -and $isTargetDefaultBranch) {
+        'Release'
+    } elseif ($shouldPrerelease) {
+        'Prerelease'
+    } else {
+        'None'
     }
 
     [pscustomobject]@{
@@ -487,9 +490,10 @@ LogGroup 'Calculate Job Run Conditions:' {
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force
     $settings.Publish.Module.AutoCleanup = $shouldAutoCleanup
 
-    # For open PRs, we only want to run build/test stages if important files changed
-    # OR if we're creating a prerelease. For merged PRs, workflow_dispatch, schedule - always run.
-    $shouldRunBuildTest = $isNotAbandonedPR -and ($hasImportantChanges -or $shouldPrerelease -or $isMergedPR)
+    # For open PRs, we only want to run build/test stages if important files changed.
+    # For merged PRs, workflow_dispatch, schedule - $hasImportantChanges is already true.
+    # Note: $shouldPrerelease already requires $hasImportantChanges, so no separate check needed.
+    $shouldRunBuildTest = $isNotAbandonedPR -and $hasImportantChanges
 
     # Create Run object with all job-specific conditions
     $run = [pscustomobject]@{
