@@ -292,7 +292,7 @@ This PR does not contain changes to files that would trigger a new release:
 If you believe this is incorrect, please verify that your changes are in the correct locations.
 "@
                     Write-Host 'Adding comment to PR about skipped stages...'
-                    Add-GitHubPullRequestComment -Owner $owner -Repo $repo -PullRequestNumber $prNumber -Body $commentBody
+                    $null = Invoke-GitHubAPI -Method POST -ApiEndpoint "/repos/$owner/$repo/issues/$prNumber/comments" -Body (@{ body = $commentBody } | ConvertTo-Json)
                 }
             }
         }
