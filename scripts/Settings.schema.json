@@ -293,6 +293,10 @@
       "type": "string",
       "description": "Working directory path"
     },
+    "HasImportantChanges": {
+      "type": "boolean",
+      "description": "Indicates if important files have changed in the PR (src/**, examples/**, README.md, .github/workflows/Process-PSModule.yml)"
+    },
     "Run": {
       "type": "object",
       "description": "Runtime execution flags",

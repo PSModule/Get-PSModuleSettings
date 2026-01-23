@@ -241,6 +241,59 @@ LogGroup 'Calculate Job Run Conditions:' {
         'None'
     }
 
+    # Check if important files have changed in the PR
+    # Important files for module and docs publish:
+    # - .github/workflows/Process-PSModule.yml
+    # - src/**
+    # - examples/**
+    # - README.md
+    $hasImportantChanges = $false
+    if ($isPR -and $pullRequest.Number) {
+        LogGroup 'Check for Important File Changes' {
+            $owner = $env:GITHUB_REPOSITORY_OWNER
+            $repo = $env:GITHUB_REPOSITORY_NAME
+            $prNumber = $pullRequest.Number
+
+            Write-Host "Fetching changed files for PR #$prNumber..."
+            $changedFiles = Invoke-GitHubAPI -ApiEndpoint "/repos/$owner/$repo/pulls/$prNumber/files" -Method GET |
+                Select-Object -ExpandProperty Response |
+                Select-Object -ExpandProperty filename
+
+            Write-Host "Changed files ($($changedFiles.Count)):"
+            $changedFiles | ForEach-Object { Write-Host "  - $_" }
+
+            # Define important file patterns
+            $importantPatterns = @(
+                '^\.github/workflows/Process-PSModule\.yml$'
+                '^src/'
+                '^examples/'
+                '^README\.md$'
+            )
+
+            # Check if any changed file matches an important pattern
+            foreach ($file in $changedFiles) {
+                foreach ($pattern in $importantPatterns) {
+                    if ($file -match $pattern) {
+                        $hasImportantChanges = $true
+                        Write-Host "Important file changed: [$file] (matches pattern: $pattern)"
+                        break
+                    }
+                }
+                if ($hasImportantChanges) { break }
+            }
+
+            if ($hasImportantChanges) {
+                Write-Host '✓ Important files have changed - build/test stages will run'
+            } else {
+                Write-Host '✗ No important files changed - build/test stages may be skipped for open PRs'
+            }
+        }
+    } else {
+        # Not a PR event or no PR number - consider as having important changes (e.g., workflow_dispatch, schedule)
+        $hasImportantChanges = $true
+        Write-Host 'Not a PR event or missing PR number - treating as having important changes'
+    }
+
     [pscustomobject]@{
         isPR                  = $isPR
         isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
@@ -252,6 +305,7 @@ LogGroup 'Calculate Job Run Conditions:' {
         hasPrereleaseLabel    = $hasPrereleaseLabel
         shouldPrerelease      = $shouldPrerelease
         ReleaseType           = $releaseType
+        HasImportantChanges   = $hasImportantChanges
     } | Format-List | Out-String
 }
 
@@ -433,28 +487,33 @@ LogGroup 'Calculate Job Run Conditions:' {
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force
     $settings.Publish.Module.AutoCleanup = $shouldAutoCleanup
 
+    # For open PRs, we only want to run build/test stages if important files changed
+    # OR if we're creating a prerelease. For merged PRs, workflow_dispatch, schedule - always run.
+    $shouldRunBuildTest = $isNotAbandonedPR -and ($hasImportantChanges -or $shouldPrerelease -or $isMergedPR)
+
     # Create Run object with all job-specific conditions
     $run = [pscustomobject]@{
         LintRepository       = $isOpenOrUpdatedPR -and (-not $settings.Linter.Skip)
-        BuildModule          = $isNotAbandonedPR -and (-not $settings.Build.Module.Skip)
-        TestSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
-        LintSourceCode       = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.SourceCode)
-        TestModule           = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.PSModule)
-        BeforeAllModuleLocal = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
-        TestModuleLocal      = $isNotAbandonedPR -and ($null -ne $settings.TestSuites.Module)
+        BuildModule          = $shouldRunBuildTest -and (-not $settings.Build.Module.Skip)
+        TestSourceCode       = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.SourceCode)
+        LintSourceCode       = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.SourceCode)
+        TestModule           = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.PSModule)
+        BeforeAllModuleLocal = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module)
+        TestModuleLocal      = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module)
         AfterAllModuleLocal  = $true # Always runs if Test-ModuleLocal was not skipped
-        GetTestResults       = $isNotAbandonedPR -and (-not $settings.Test.TestResults.Skip) -and (
+        GetTestResults       = $shouldRunBuildTest -and (-not $settings.Test.TestResults.Skip) -and (
             ($null -ne $settings.TestSuites.SourceCode) -or ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
         )
-        GetCodeCoverage      = $isNotAbandonedPR -and (-not $settings.Test.CodeCoverage.Skip) -and (
+        GetCodeCoverage      = $shouldRunBuildTest -and (-not $settings.Test.CodeCoverage.Skip) -and (
             ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
         )
         PublishModule        = ($releaseType -ne 'None') -or $shouldAutoCleanup
-        BuildDocs            = $isNotAbandonedPR -and (-not $settings.Build.Docs.Skip)
-        BuildSite            = $isNotAbandonedPR -and (-not $settings.Build.Site.Skip)
+        BuildDocs            = $shouldRunBuildTest -and (-not $settings.Build.Docs.Skip)
+        BuildSite            = $shouldRunBuildTest -and (-not $settings.Build.Site.Skip)
         PublishSite          = $isMergedPR -and $isTargetDefaultBranch
     }
     $settings | Add-Member -MemberType NoteProperty -Name Run -Value $run
+    $settings | Add-Member -MemberType NoteProperty -Name HasImportantChanges -Value $hasImportantChanges
 
     Write-Host 'Job Run Conditions:'
     $run | Format-List | Out-String
