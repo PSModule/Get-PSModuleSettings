@@ -289,7 +289,9 @@ LogGroup 'Calculate Job Run Conditions:' {
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
-    $releaseType = if ($isMergedPR -and $isTargetDefaultBranch) {
+    # Release only happens when important files changed (actual module code/docs)
+    # Merged PRs without important changes should only trigger cleanup, not a new release
+    $releaseType = if ($isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges) {
         'Release'
     } elseif ($shouldPrerelease) {
         'Prerelease'
@@ -483,8 +485,9 @@ if ($settings.Test.Skip) {
 # Calculate job-specific conditions and add to settings
 LogGroup 'Calculate Job Run Conditions:' {
     # Calculate if prereleases should be cleaned up:
-    # True if (Release or Abandoned PR) AND user has AutoCleanup enabled (defaults to true)
-    $shouldAutoCleanup = (($releaseType -eq 'Release') -or $isAbandonedPR) -and ($settings.Publish.Module.AutoCleanup -eq $true)
+    # True if (Release, merged PR to default branch, or Abandoned PR) AND user has AutoCleanup enabled (defaults to true)
+    # Even if no important files changed, we still want to cleanup prereleases when merging to default branch
+    $shouldAutoCleanup = (($releaseType -eq 'Release') -or ($isMergedPR -and $isTargetDefaultBranch) -or $isAbandonedPR) -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force
@@ -514,7 +517,7 @@ LogGroup 'Calculate Job Run Conditions:' {
         PublishModule        = ($releaseType -ne 'None') -or $shouldAutoCleanup
         BuildDocs            = $shouldRunBuildTest -and (-not $settings.Build.Docs.Skip)
         BuildSite            = $shouldRunBuildTest -and (-not $settings.Build.Site.Skip)
-        PublishSite          = $isMergedPR -and $isTargetDefaultBranch
+        PublishSite          = $isMergedPR -and $isTargetDefaultBranch -and $hasImportantChanges
     }
     $settings | Add-Member -MemberType NoteProperty -Name Run -Value $run
     $settings | Add-Member -MemberType NoteProperty -Name HasImportantChanges -Value $hasImportantChanges
