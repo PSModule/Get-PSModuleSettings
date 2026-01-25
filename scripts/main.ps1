@@ -219,7 +219,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     } | Format-List | Out-String
 
     $isPR = $env:GITHUB_EVENT_NAME -eq 'pull_request'
-    $isOpenOrUpdatedPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize')
+    $isOpenOrUpdatedPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled', 'unlabeled')
     $isAbandonedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -ne $true
     $isMergedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -eq $true
     $isNotAbandonedPR = -not $isAbandonedPR
