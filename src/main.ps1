@@ -296,7 +296,12 @@ If you believe this is incorrect, please verify that your changes are in the cor
 "@
                     try {
                         Write-Host 'Adding comment to PR about skipped stages...'
-                        $null = Invoke-GitHubAPI -Method POST -ApiEndpoint "/repos/$owner/$repo/issues/$prNumber/comments" -Body (@{ body = $commentBody } | ConvertTo-Json)
+                        $apiParams = @{
+                            Method      = 'POST'
+                            ApiEndpoint = "/repos/$owner/$repo/issues/$prNumber/comments"
+                            Body        = @{ body = $commentBody } | ConvertTo-Json
+                        }
+                        $null = Invoke-GitHubAPI @apiParams
                         Write-Host '✓ Comment added successfully'
                     } catch {
                         Write-Warning "Could not add PR comment (may need 'issues: write' permission): $_"
@@ -514,7 +519,10 @@ LogGroup 'Calculate Job Run Conditions:' {
     # Calculate if prereleases should be cleaned up:
     # True if (Release, merged PR to default branch, or Abandoned PR) AND user has AutoCleanup enabled (defaults to true)
     # Even if no important files changed, we still want to cleanup prereleases when merging to default branch
-    $shouldAutoCleanup = (($releaseType -eq 'Release') -or ($isMergedPR -and $isTargetDefaultBranch) -or $isAbandonedPR) -and ($settings.Publish.Module.AutoCleanup -eq $true)
+    $isReleaseOrMergedOrAbandoned = ($releaseType -eq 'Release') -or
+        ($isMergedPR -and $isTargetDefaultBranch) -or
+        $isAbandonedPR
+    $shouldAutoCleanup = $isReleaseOrMergedOrAbandoned -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
     $settings.Publish.Module | Add-Member -MemberType NoteProperty -Name ReleaseType -Value $releaseType -Force
