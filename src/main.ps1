@@ -519,9 +519,11 @@ LogGroup 'Calculate Job Run Conditions:' {
     # Calculate if prereleases should be cleaned up:
     # True if (Release, merged PR to default branch, or Abandoned PR) AND user has AutoCleanup enabled (defaults to true)
     # Even if no important files changed, we still want to cleanup prereleases when merging to default branch
-    $isReleaseOrMergedOrAbandoned = ($releaseType -eq 'Release') -or
+    $isReleaseOrMergedOrAbandoned = (
+        ($releaseType -eq 'Release') -or
         ($isMergedPR -and $isTargetDefaultBranch) -or
         $isAbandonedPR
+    )
     $shouldAutoCleanup = $isReleaseOrMergedOrAbandoned -and ($settings.Publish.Module.AutoCleanup -eq $true)
 
     # Update Publish.Module with computed release values
