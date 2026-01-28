@@ -253,7 +253,6 @@ LogGroup 'Calculate Job Run Conditions:' {
 
             # Define important file patterns
             $importantPatterns = @(
-                '^\.github/workflows/Process-PSModule\.yml$'
                 '^src/'
                 '^examples/'
                 '^README\.md$'
@@ -288,7 +287,6 @@ This PR does not contain changes to files that would trigger a new release:
 | ``src/**`` | Module source code |
 | ``examples/**`` | Example scripts |
 | ``README.md`` | Documentation |
-| ``.github/workflows/Process-PSModule.yml`` | Workflow configuration |
 
 **Build, test, and publish stages will be skipped** for this PR.
 
