@@ -181,7 +181,9 @@ $settings = [pscustomobject]@{
     Linter  = [pscustomobject]@{
         Skip                 = $settings.Linter.Skip ?? $false
         ShowSummaryOnSuccess = $settings.Linter.ShowSummaryOnSuccess ?? $false
-        env                  = $settings.Linter.env ?? @{}
+        env                  = @{
+            SUPPRESS_OUTPUT_ON_SUCCESS = $settings.Linter.env.SUPPRESS_OUTPUT_ON_SUCCESS ?? $true
+        } + ($settings.Linter.env ?? @{})
     }
 }
 
