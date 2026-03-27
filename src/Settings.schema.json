@@ -9,6 +9,13 @@
       "type": "string",
       "description": "The name of the module"
     },
+    "ImportantFilePatterns": {
+      "type": "array",
+      "description": "Regex patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. Defaults to ['^src/', '^README\\.md$'] when not configured.",
+      "items": {
+        "type": "string"
+      }
+    },
     "Test": {
       "type": "object",
       "description": "Test configuration settings",

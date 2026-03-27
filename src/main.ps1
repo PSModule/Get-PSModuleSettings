@@ -7,6 +7,7 @@ $verbose = $env:PSMODULE_GET_SETTINGS_INPUT_Verbose
 $version = $env:PSMODULE_GET_SETTINGS_INPUT_Version
 $prerelease = $env:PSMODULE_GET_SETTINGS_INPUT_Prerelease
 $workingDirectory = $env:PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory
+$importantFilePatternsInput = $env:PSMODULE_GET_SETTINGS_INPUT_ImportantFilePatterns
 
 LogGroup 'Inputs' {
     [pscustomobject]@{
@@ -89,8 +90,23 @@ LogGroup 'Name' {
     }
 }
 
+LogGroup 'ImportantFilePatterns' {
+    $defaultImportantFilePatterns = @('^src/', '^README\.md$')
+    if ($settings.ImportantFilePatterns -and $settings.ImportantFilePatterns.Count -gt 0) {
+        $importantFilePatterns = @($settings.ImportantFilePatterns)
+        Write-Host "Using ImportantFilePatterns from settings file: [$($importantFilePatterns -join ', ')]"
+    } elseif (-not [string]::IsNullOrWhiteSpace($importantFilePatternsInput)) {
+        $importantFilePatterns = @($importantFilePatternsInput -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        Write-Host "Using ImportantFilePatterns from action input: [$($importantFilePatterns -join ', ')]"
+    } else {
+        $importantFilePatterns = $defaultImportantFilePatterns
+        Write-Host "Using default ImportantFilePatterns: [$($importantFilePatterns -join ', ')]"
+    }
+}
+
 $settings = [pscustomobject]@{
-    Name    = $name
+    Name                  = $name
+    ImportantFilePatterns = $importantFilePatterns
     Test    = [pscustomobject]@{
         Skip         = $settings.Test.Skip ?? $false
         Linux        = [pscustomobject]@{
@@ -251,11 +267,8 @@ LogGroup 'Calculate Job Run Conditions:' {
             Write-Host "Changed files ($($changedFiles.Count)):"
             $changedFiles | ForEach-Object { Write-Host "  - $_" }
 
-            # Define important file patterns
-            $importantPatterns = @(
-                '^src/'
-                '^README\.md$'
-            )
+            # Use configured important file patterns
+            $importantPatterns = $settings.ImportantFilePatterns
 
             # Check if any changed file matches an important pattern
             foreach ($file in $changedFiles) {
@@ -276,15 +289,17 @@ LogGroup 'Calculate Job Run Conditions:' {
 
                 # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
+                    $patternRows = ($importantPatterns | ForEach-Object {
+                        "| ``$_`` | Matches files where path matches this pattern |"
+                    }) -join "`n"
                     $commentBody = @"
 ### No Significant Changes Detected
 
 This PR does not contain changes to files that would trigger a new release:
 
-| Path | Description |
+| Pattern | Description |
 | :--- | :---------- |
-| ``src/**`` | Module source code |
-| ``README.md`` | Documentation |
+$patternRows
 
 **Build, test, and publish stages will be skipped** for this PR.
 
