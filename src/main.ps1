@@ -163,7 +163,7 @@ $settings = [pscustomobject]@{
             StepSummaryMode = $settings.Test.CodeCoverage.StepSummaryMode ?? 'Missed, Files'
         }
     }
-    Build                  = [pscustomobject]@{
+    Build                 = [pscustomobject]@{
         Skip   = $settings.Build.Skip ?? $false
         Module = [pscustomobject]@{
             Skip = $settings.Build.Module.Skip ?? $false
@@ -176,7 +176,7 @@ $settings = [pscustomobject]@{
             Skip = $settings.Build.Site.Skip ?? $false
         }
     }
-    Publish                = [pscustomobject]@{
+    Publish               = [pscustomobject]@{
         Module = [pscustomobject]@{
             Skip                     = $settings.Publish.Module.Skip ?? $false
             AutoCleanup              = $settings.Publish.Module.AutoCleanup ?? $true
@@ -194,7 +194,7 @@ $settings = [pscustomobject]@{
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
         }
     }
-    Linter                 = [pscustomobject]@{
+    Linter                = [pscustomobject]@{
         Skip                 = $settings.Linter.Skip ?? $false
         ShowSummaryOnSuccess = $settings.Linter.ShowSummaryOnSuccess ?? $false
         env                  = $settings.Linter.env ?? @{}
