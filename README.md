@@ -8,7 +8,7 @@ This GitHub Action is a part of the [PSModule framework](https://github.com/PSMo
 | :---- | :---------- | :------: | :------ |
 | `Name` | Name of the module. | No | Repository name |
 | `SettingsPath` | Path to the settings file (json, yaml/yml, or psd1). | No | |
-| `ImportantFilePatterns` | Newline-separated list of regex patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. | No | `^src/` and `^README\.md$` |
+| `ImportantFilePatterns` | Newline-separated list of regular expression patterns that identify important files. Changes matching these patterns trigger build, test, and publish stages. | No | `^src/` and `^README\.md$` |
 | `Debug` | Enable debug output. | No | `false` |
 | `Verbose` | Enable verbose output. | No | `false` |
 | `Version` | Specifies the version of the GitHub module to be installed. | No | |

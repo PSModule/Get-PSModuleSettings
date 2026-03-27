@@ -107,7 +107,7 @@ LogGroup 'ImportantFilePatterns' {
 $settings = [pscustomobject]@{
     Name                  = $name
     ImportantFilePatterns = $importantFilePatterns
-    Test    = [pscustomobject]@{
+    Test                  = [pscustomobject]@{
         Skip         = $settings.Test.Skip ?? $false
         Linux        = [pscustomobject]@{
             Skip = $settings.Test.Linux.Skip ?? $false
@@ -163,7 +163,7 @@ $settings = [pscustomobject]@{
             StepSummaryMode = $settings.Test.CodeCoverage.StepSummaryMode ?? 'Missed, Files'
         }
     }
-    Build   = [pscustomobject]@{
+    Build                  = [pscustomobject]@{
         Skip   = $settings.Build.Skip ?? $false
         Module = [pscustomobject]@{
             Skip = $settings.Build.Module.Skip ?? $false
@@ -176,7 +176,7 @@ $settings = [pscustomobject]@{
             Skip = $settings.Build.Site.Skip ?? $false
         }
     }
-    Publish = [pscustomobject]@{
+    Publish                = [pscustomobject]@{
         Module = [pscustomobject]@{
             Skip                     = $settings.Publish.Module.Skip ?? $false
             AutoCleanup              = $settings.Publish.Module.AutoCleanup ?? $true
@@ -194,7 +194,7 @@ $settings = [pscustomobject]@{
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
         }
     }
-    Linter  = [pscustomobject]@{
+    Linter                 = [pscustomobject]@{
         Skip                 = $settings.Linter.Skip ?? $false
         ShowSummaryOnSuccess = $settings.Linter.ShowSummaryOnSuccess ?? $false
         env                  = $settings.Linter.env ?? @{}
@@ -290,8 +290,8 @@ LogGroup 'Calculate Job Run Conditions:' {
                 # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
                     $patternRows = ($importantPatterns | ForEach-Object {
-                        "| ``$_`` | Matches files where path matches this pattern |"
-                    }) -join "`n"
+                            "| ``$_`` | Matches files where path matches this pattern |"
+                        }) -join "`n"
                     $commentBody = @"
 ### No Significant Changes Detected
 
