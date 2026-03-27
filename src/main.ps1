@@ -531,6 +531,13 @@ LogGroup 'Calculate Job Run Conditions:' {
     # Note: $shouldPrerelease already requires $hasImportantChanges, so no separate check needed.
     $shouldRunBuildTest = $isNotAbandonedPR -and $hasImportantChanges
 
+    # Check if setup/teardown scripts exist in the repository
+    $hasBeforeAllScript = Test-Path -Path 'tests/BeforeAll.ps1'
+    $hasAfterAllScript = Test-Path -Path 'tests/AfterAll.ps1'
+    Write-Host "Setup/teardown script detection:"
+    Write-Host "  tests/BeforeAll.ps1 exists: $hasBeforeAllScript"
+    Write-Host "  tests/AfterAll.ps1 exists:  $hasAfterAllScript"
+
     # Create Run object with all job-specific conditions
     $run = [pscustomobject]@{
         LintRepository       = $isOpenOrUpdatedPR -and (-not $settings.Linter.Skip)
@@ -538,9 +545,9 @@ LogGroup 'Calculate Job Run Conditions:' {
         TestSourceCode       = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.SourceCode)
         LintSourceCode       = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.SourceCode)
         TestModule           = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.PSModule)
-        BeforeAllModuleLocal = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module)
+        BeforeAllModuleLocal = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module) -and $hasBeforeAllScript
         TestModuleLocal      = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module)
-        AfterAllModuleLocal  = $true # Always runs if Test-ModuleLocal was not skipped
+        AfterAllModuleLocal  = $shouldRunBuildTest -and ($null -ne $settings.TestSuites.Module) -and $hasAfterAllScript
         GetTestResults       = $shouldRunBuildTest -and (-not $settings.Test.TestResults.Skip) -and (
             ($null -ne $settings.TestSuites.SourceCode) -or ($null -ne $settings.TestSuites.PSModule) -or ($null -ne $settings.TestSuites.Module)
         )
