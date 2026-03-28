@@ -92,7 +92,7 @@ LogGroup 'Name' {
 
 LogGroup 'ImportantFilePatterns' {
     $defaultImportantFilePatterns = @('^src/', '^README\.md$')
-    if ($settings.ImportantFilePatterns -and $settings.ImportantFilePatterns.Count -gt 0) {
+    if ($null -ne $settings.ImportantFilePatterns) {
         $importantFilePatterns = @($settings.ImportantFilePatterns)
         Write-Host "Using ImportantFilePatterns from settings file: [$($importantFilePatterns -join ', ')]"
     } elseif (-not [string]::IsNullOrWhiteSpace($importantFilePatternsInput)) {
@@ -101,6 +101,15 @@ LogGroup 'ImportantFilePatterns' {
     } else {
         $importantFilePatterns = $defaultImportantFilePatterns
         Write-Host "Using default ImportantFilePatterns: [$($importantFilePatterns -join ', ')]"
+    }
+
+    # Validate that all patterns are valid regular expressions
+    foreach ($pattern in $importantFilePatterns) {
+        try {
+            [void][regex]::new($pattern)
+        } catch {
+            throw "Invalid regex in ImportantFilePatterns: '$pattern'. $_"
+        }
     }
 }
 
@@ -290,7 +299,8 @@ LogGroup 'Calculate Job Run Conditions:' {
                 # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
                     $patternRows = ($importantPatterns | ForEach-Object {
-                            "| ``$_`` | Matches files where path matches this pattern |"
+                            $escapedPattern = $_.Replace('|', '\|').Replace('``', '\``')
+                            "| ``$escapedPattern`` | Matches files where path matches this pattern |"
                         }) -join "`n"
                     $commentBody = @"
 ### No Significant Changes Detected
