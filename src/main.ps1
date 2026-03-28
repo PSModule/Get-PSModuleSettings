@@ -7,6 +7,7 @@ $verbose = $env:PSMODULE_GET_SETTINGS_INPUT_Verbose
 $version = $env:PSMODULE_GET_SETTINGS_INPUT_Version
 $prerelease = $env:PSMODULE_GET_SETTINGS_INPUT_Prerelease
 $workingDirectory = $env:PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory
+$importantFilePatternsInput = $env:PSMODULE_GET_SETTINGS_INPUT_ImportantFilePatterns
 
 LogGroup 'Inputs' {
     [pscustomobject]@{
@@ -89,9 +90,33 @@ LogGroup 'Name' {
     }
 }
 
+LogGroup 'ImportantFilePatterns' {
+    $defaultImportantFilePatterns = @('^src/', '^README\.md$')
+    if ($null -ne $settings.ImportantFilePatterns) {
+        $importantFilePatterns = @($settings.ImportantFilePatterns)
+        Write-Host "Using ImportantFilePatterns from settings file: [$($importantFilePatterns -join ', ')]"
+    } elseif (-not [string]::IsNullOrWhiteSpace($importantFilePatternsInput)) {
+        $importantFilePatterns = @($importantFilePatternsInput -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        Write-Host "Using ImportantFilePatterns from action input: [$($importantFilePatterns -join ', ')]"
+    } else {
+        $importantFilePatterns = $defaultImportantFilePatterns
+        Write-Host "Using default ImportantFilePatterns: [$($importantFilePatterns -join ', ')]"
+    }
+
+    # Validate that all patterns are valid regular expressions
+    foreach ($pattern in $importantFilePatterns) {
+        try {
+            [void][regex]::new($pattern)
+        } catch {
+            throw "Invalid regex in ImportantFilePatterns: '$pattern'. $_"
+        }
+    }
+}
+
 $settings = [pscustomobject]@{
-    Name    = $name
-    Test    = [pscustomobject]@{
+    Name                  = $name
+    ImportantFilePatterns = $importantFilePatterns
+    Test                  = [pscustomobject]@{
         Skip         = $settings.Test.Skip ?? $false
         Linux        = [pscustomobject]@{
             Skip = $settings.Test.Linux.Skip ?? $false
@@ -147,7 +172,7 @@ $settings = [pscustomobject]@{
             StepSummaryMode = $settings.Test.CodeCoverage.StepSummaryMode ?? 'Missed, Files'
         }
     }
-    Build   = [pscustomobject]@{
+    Build                 = [pscustomobject]@{
         Skip   = $settings.Build.Skip ?? $false
         Module = [pscustomobject]@{
             Skip = $settings.Build.Module.Skip ?? $false
@@ -160,7 +185,7 @@ $settings = [pscustomobject]@{
             Skip = $settings.Build.Site.Skip ?? $false
         }
     }
-    Publish = [pscustomobject]@{
+    Publish               = [pscustomobject]@{
         Module = [pscustomobject]@{
             Skip                     = $settings.Publish.Module.Skip ?? $false
             AutoCleanup              = $settings.Publish.Module.AutoCleanup ?? $true
@@ -178,7 +203,7 @@ $settings = [pscustomobject]@{
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
         }
     }
-    Linter  = [pscustomobject]@{
+    Linter                = [pscustomobject]@{
         Skip                 = $settings.Linter.Skip ?? $false
         ShowSummaryOnSuccess = $settings.Linter.ShowSummaryOnSuccess ?? $false
         env                  = $settings.Linter.env ?? @{}
@@ -231,11 +256,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
 
     # Check if important files have changed in the PR
-    # Important files for module and docs publish:
-    # - .github/workflows/Process-PSModule.yml
-    # - src/**
-    # - examples/**
-    # - README.md
+    # Important files are determined by the configured ImportantFilePatterns setting
     $hasImportantChanges = $false
     if ($isPR -and $pullRequest.Number) {
         LogGroup 'Check for Important File Changes' {
@@ -251,11 +272,8 @@ LogGroup 'Calculate Job Run Conditions:' {
             Write-Host "Changed files ($($changedFiles.Count)):"
             $changedFiles | ForEach-Object { Write-Host "  - $_" }
 
-            # Define important file patterns
-            $importantPatterns = @(
-                '^src/'
-                '^README\.md$'
-            )
+            # Use configured important file patterns
+            $importantPatterns = $settings.ImportantFilePatterns
 
             # Check if any changed file matches an important pattern
             foreach ($file in $changedFiles) {
@@ -276,15 +294,24 @@ LogGroup 'Calculate Job Run Conditions:' {
 
                 # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
+                    $patternRows = ($importantPatterns | ForEach-Object {
+                            $escapedPattern = $_.Replace('|', '\|')
+                            $backtickMatches = [regex]::Matches($escapedPattern, '`+')
+                            $maxRun = 0
+                            foreach ($m in $backtickMatches) {
+                                if ($m.Value.Length -gt $maxRun) { $maxRun = $m.Value.Length }
+                            }
+                            $codeDelimiter = '`' * ($maxRun + 1)
+                            "| ${codeDelimiter}${escapedPattern}${codeDelimiter} | Matches files where path matches this pattern |"
+                        }) -join "`n"
                     $commentBody = @"
 ### No Significant Changes Detected
 
 This PR does not contain changes to files that would trigger a new release:
 
-| Path | Description |
+| Pattern | Description |
 | :--- | :---------- |
-| ``src/**`` | Module source code |
-| ``README.md`` | Documentation |
+$patternRows
 
 **Build, test, and publish stages will be skipped** for this PR.
 

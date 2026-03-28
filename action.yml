@@ -31,6 +31,15 @@ inputs:
     description: The working directory where the script will run from.
     required: false
     default: ${{ github.workspace }}
+  ImportantFilePatterns:
+    description: |
+      Newline-separated list of regex patterns that identify important files.
+      Changes matching these patterns trigger build, test, and publish stages.
+      When set, fully replaces the defaults.
+    required: false
+    default: |
+      ^src/
+      ^README\.md$
 
 outputs:
   Settings:
@@ -51,6 +60,7 @@ runs:
         PSMODULE_GET_SETTINGS_INPUT_Version: ${{ inputs.Version }}
         PSMODULE_GET_SETTINGS_INPUT_Prerelease: ${{ inputs.Prerelease }}
         PSMODULE_GET_SETTINGS_INPUT_WorkingDirectory: ${{ inputs.WorkingDirectory }}
+        PSMODULE_GET_SETTINGS_INPUT_ImportantFilePatterns: ${{ inputs.ImportantFilePatterns }}
       with:
         Name: Get-PSModuleSettings
         ShowInfo: false
