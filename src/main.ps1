@@ -256,11 +256,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
 
     # Check if important files have changed in the PR
-    # Important files for module and docs publish:
-    # - .github/workflows/Process-PSModule.yml
-    # - src/**
-    # - examples/**
-    # - README.md
+    # Important files are determined by the configured ImportantFilePatterns setting
     $hasImportantChanges = $false
     if ($isPR -and $pullRequest.Number) {
         LogGroup 'Check for Important File Changes' {
@@ -299,8 +295,14 @@ LogGroup 'Calculate Job Run Conditions:' {
                 # Add a comment to open PRs explaining why build/test is skipped (best-effort, may fail if permissions not granted)
                 if ($isOpenOrUpdatedPR) {
                     $patternRows = ($importantPatterns | ForEach-Object {
-                            $escapedPattern = $_.Replace('|', '\|').Replace('``', '\``')
-                            "| ``$escapedPattern`` | Matches files where path matches this pattern |"
+                            $escapedPattern = $_.Replace('|', '\|')
+                            $backtickMatches = [regex]::Matches($escapedPattern, '`+')
+                            $maxRun = 0
+                            foreach ($m in $backtickMatches) {
+                                if ($m.Value.Length -gt $maxRun) { $maxRun = $m.Value.Length }
+                            }
+                            $codeDelimiter = '``' * ($maxRun + 1)
+                            "| ${codeDelimiter}${escapedPattern}${codeDelimiter} | Matches files where path matches this pattern |"
                         }) -join "`n"
                     $commentBody = @"
 ### No Significant Changes Detected
