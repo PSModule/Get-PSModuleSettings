@@ -301,7 +301,7 @@ LogGroup 'Calculate Job Run Conditions:' {
                             foreach ($m in $backtickMatches) {
                                 if ($m.Value.Length -gt $maxRun) { $maxRun = $m.Value.Length }
                             }
-                            $codeDelimiter = '``' * ($maxRun + 1)
+                            $codeDelimiter = '`' * ($maxRun + 1)
                             "| ${codeDelimiter}${escapedPattern}${codeDelimiter} | Matches files where path matches this pattern |"
                         }) -join "`n"
                     $commentBody = @"
