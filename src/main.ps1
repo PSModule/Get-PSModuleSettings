@@ -333,10 +333,19 @@ If you believe this is incorrect, please verify that your changes are in the cor
         Write-Host 'Not a PR event or missing PR number - treating as having important changes'
     }
 
-    # Prerelease happens automatically for any open PR with important file changes.
-    # Use AutoPatching (default: true) for patch-level bump; add major/minor labels for larger bumps.
-    # Add an IgnoreLabel (default: 'NoRelease') to opt out.
-    $shouldPrerelease = $isOpenOrLabeledPR -and $hasImportantChanges
+    # Evaluate PR labels against configured label lists
+    $prLabels = @($pullRequest.Labels | ForEach-Object { $_.Name })
+    $ignoreLabels = ($settings.Publish.Module.IgnoreLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    $majorLabels = ($settings.Publish.Module.MajorLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    $minorLabels = ($settings.Publish.Module.MinorLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    $patchLabels = ($settings.Publish.Module.PatchLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+
+    $hasIgnoreLabel = ($prLabels | Where-Object { $ignoreLabels -contains $_ }).Count -gt 0
+    $hasVersionBumpLabel = ($prLabels | Where-Object { ($majorLabels + $minorLabels + $patchLabels) -contains $_ }).Count -gt 0
+    $hasVersionBumpOrAutoPatch = $settings.Publish.Module.AutoPatching -or $hasVersionBumpLabel
+
+    # Prerelease: open PR with important changes, not opted out, and either AutoPatching or an explicit version bump label.
+    $shouldPrerelease = $isOpenOrLabeledPR -and $hasImportantChanges -and $hasVersionBumpOrAutoPatch -and -not $hasIgnoreLabel
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
@@ -351,16 +360,19 @@ If you believe this is incorrect, please verify that your changes are in the cor
     }
 
     [pscustomobject]@{
-        isPR                  = $isPR
-        isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
-        isOpenOrLabeledPR     = $isOpenOrLabeledPR
-        isAbandonedPR         = $isAbandonedPR
-        isMergedPR            = $isMergedPR
-        isNotAbandonedPR      = $isNotAbandonedPR
-        isTargetDefaultBranch = $isTargetDefaultBranch
-        shouldPrerelease      = $shouldPrerelease
-        ReleaseType           = $releaseType
-        HasImportantChanges   = $hasImportantChanges
+        isPR                    = $isPR
+        isOpenOrUpdatedPR       = $isOpenOrUpdatedPR
+        isOpenOrLabeledPR       = $isOpenOrLabeledPR
+        isAbandonedPR           = $isAbandonedPR
+        isMergedPR              = $isMergedPR
+        isNotAbandonedPR        = $isNotAbandonedPR
+        isTargetDefaultBranch   = $isTargetDefaultBranch
+        hasIgnoreLabel          = $hasIgnoreLabel
+        hasVersionBumpLabel     = $hasVersionBumpLabel
+        hasVersionBumpOrAutoPatch = $hasVersionBumpOrAutoPatch
+        shouldPrerelease        = $shouldPrerelease
+        ReleaseType             = $releaseType
+        HasImportantChanges     = $hasImportantChanges
     } | Format-List | Out-String
 }
 
