@@ -196,6 +196,7 @@ $settings = [pscustomobject]@{
             MajorLabels              = $settings.Publish.Module.MajorLabels ?? 'major, breaking'
             MinorLabels              = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
             PatchLabels              = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
+            PrereleaseLabels         = $settings.Publish.Module.PrereleaseLabels ?? 'Prerelease'
             IgnoreLabels             = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
             UsePRTitleAsReleaseName  = $settings.Publish.Module.UsePRTitleAsReleaseName ?? $false
             UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
@@ -335,17 +336,15 @@ If you believe this is incorrect, please verify that your changes are in the cor
 
     # Evaluate PR labels against configured label lists
     $prLabels = @($pullRequest.Labels | ForEach-Object { $_.Name })
+    $prereleaseLabels = ($settings.Publish.Module.PrereleaseLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
     $ignoreLabels = ($settings.Publish.Module.IgnoreLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    $majorLabels = ($settings.Publish.Module.MajorLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    $minorLabels = ($settings.Publish.Module.MinorLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    $patchLabels = ($settings.Publish.Module.PatchLabels -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
 
+    $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
     $hasIgnoreLabel = ($prLabels | Where-Object { $ignoreLabels -contains $_ }).Count -gt 0
-    $hasVersionBumpLabel = ($prLabels | Where-Object { ($majorLabels + $minorLabels + $patchLabels) -contains $_ }).Count -gt 0
-    $hasVersionBumpOrAutoPatch = $settings.Publish.Module.AutoPatching -or $hasVersionBumpLabel
 
-    # Prerelease: open PR with important changes, not opted out, and either AutoPatching or an explicit version bump label.
-    $shouldPrerelease = $isOpenOrLabeledPR -and $hasImportantChanges -and $hasVersionBumpOrAutoPatch -and -not $hasIgnoreLabel
+    # Prerelease: open PR with the Prerelease label, important changes, and not opted out via ignore label.
+    # Version level (patch/minor/major) is determined by Resolve-PSModuleVersion based on version bump labels and AutoPatching.
+    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel -and $hasImportantChanges -and -not $hasIgnoreLabel
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
@@ -360,19 +359,18 @@ If you believe this is incorrect, please verify that your changes are in the cor
     }
 
     [pscustomobject]@{
-        isPR                    = $isPR
-        isOpenOrUpdatedPR       = $isOpenOrUpdatedPR
-        isOpenOrLabeledPR       = $isOpenOrLabeledPR
-        isAbandonedPR           = $isAbandonedPR
-        isMergedPR              = $isMergedPR
-        isNotAbandonedPR        = $isNotAbandonedPR
-        isTargetDefaultBranch   = $isTargetDefaultBranch
-        hasIgnoreLabel          = $hasIgnoreLabel
-        hasVersionBumpLabel     = $hasVersionBumpLabel
-        hasVersionBumpOrAutoPatch = $hasVersionBumpOrAutoPatch
-        shouldPrerelease        = $shouldPrerelease
-        ReleaseType             = $releaseType
-        HasImportantChanges     = $hasImportantChanges
+        isPR                  = $isPR
+        isOpenOrUpdatedPR     = $isOpenOrUpdatedPR
+        isOpenOrLabeledPR     = $isOpenOrLabeledPR
+        isAbandonedPR         = $isAbandonedPR
+        isMergedPR            = $isMergedPR
+        isNotAbandonedPR      = $isNotAbandonedPR
+        isTargetDefaultBranch = $isTargetDefaultBranch
+        hasPrereleaseLabel    = $hasPrereleaseLabel
+        hasIgnoreLabel        = $hasIgnoreLabel
+        shouldPrerelease      = $shouldPrerelease
+        ReleaseType           = $releaseType
+        HasImportantChanges   = $hasImportantChanges
     } | Format-List | Out-String
 }
 
@@ -568,7 +566,7 @@ LogGroup 'Calculate Job Run Conditions:' {
     # Check if setup/teardown scripts exist in the repository
     $hasBeforeAllScript = Test-Path -Path 'tests/BeforeAll.ps1'
     $hasAfterAllScript = Test-Path -Path 'tests/AfterAll.ps1'
-    Write-Host "Setup/teardown script detection:"
+    Write-Host 'Setup/teardown script detection:'
     Write-Host "  tests/BeforeAll.ps1 exists: $hasBeforeAllScript"
     Write-Host "  tests/AfterAll.ps1 exists:  $hasAfterAllScript"
 
