@@ -197,7 +197,6 @@ $settings = [pscustomobject]@{
             MinorLabels              = $settings.Publish.Module.MinorLabels ?? 'minor, feature'
             PatchLabels              = $settings.Publish.Module.PatchLabels ?? 'patch, fix'
             IgnoreLabels             = $settings.Publish.Module.IgnoreLabels ?? 'NoRelease'
-            PrereleaseLabels         = $settings.Publish.Module.PrereleaseLabels ?? 'prerelease'
             UsePRTitleAsReleaseName  = $settings.Publish.Module.UsePRTitleAsReleaseName ?? $false
             UsePRBodyAsReleaseNotes  = $settings.Publish.Module.UsePRBodyAsReleaseNotes ?? $true
             UsePRTitleAsNotesHeading = $settings.Publish.Module.UsePRTitleAsNotesHeading ?? $true
@@ -249,10 +248,6 @@ LogGroup 'Calculate Job Run Conditions:' {
     $isMergedPR = $isPR -and $pullRequestAction -eq 'closed' -and $pullRequestIsMerged -eq $true
     $isNotAbandonedPR = -not $isAbandonedPR
 
-    # Check if a prerelease label exists on the PR
-    $prereleaseLabels = $settings.Publish.Module.PrereleaseLabels -split ',' | ForEach-Object { $_.Trim() }
-    $prLabels = @($pullRequest.labels.name)
-    $hasPrereleaseLabel = ($prLabels | Where-Object { $prereleaseLabels -contains $_ }).Count -gt 0
     $isOpenOrLabeledPR = $isPR -and $pullRequestAction -in @('opened', 'reopened', 'synchronize', 'labeled')
 
     # Check if important files have changed in the PR
@@ -338,9 +333,10 @@ If you believe this is incorrect, please verify that your changes are in the cor
         Write-Host 'Not a PR event or missing PR number - treating as having important changes'
     }
 
-    # Prerelease requires both: prerelease label AND important file changes
-    # No point creating a prerelease if only non-module files changed
-    $shouldPrerelease = $isOpenOrLabeledPR -and $hasPrereleaseLabel -and $hasImportantChanges
+    # Prerelease happens automatically for any open PR with important file changes.
+    # Use AutoPatching (default: true) for patch-level bump; add major/minor labels for larger bumps.
+    # Add an IgnoreLabel (default: 'NoRelease') to opt out.
+    $shouldPrerelease = $isOpenOrLabeledPR -and $hasImportantChanges
 
     # Determine ReleaseType - what type of release to create
     # Values: 'Release', 'Prerelease', 'None'
@@ -362,7 +358,6 @@ If you believe this is incorrect, please verify that your changes are in the cor
         isMergedPR            = $isMergedPR
         isNotAbandonedPR      = $isNotAbandonedPR
         isTargetDefaultBranch = $isTargetDefaultBranch
-        hasPrereleaseLabel    = $hasPrereleaseLabel
         shouldPrerelease      = $shouldPrerelease
         ReleaseType           = $releaseType
         HasImportantChanges   = $hasImportantChanges
