@@ -1,4 +1,6 @@
-﻿BeforeAll {
+﻿#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.*' }
+
+BeforeAll {
     # Minimal test file for validation purposes
 }
 
